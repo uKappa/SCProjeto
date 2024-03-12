@@ -24,7 +24,10 @@ public class IoTDevice {
         int dev_id = Integer.parseInt(args[1]);
         String user_id = args[2];
 
-        String passwd = "1234";
+        String passwd;
+
+        System.out.println("Insira a sua password: ");
+        passwd = sc.nextLine();
 
         try {
             socket = new Socket(host,port);
@@ -38,7 +41,6 @@ public class IoTDevice {
 		ObjectInputStream inStream = null;
         
         try {
-            socket = new Socket(host,port);
 
             outStream = new ObjectOutputStream(socket.getOutputStream());
 			inStream = new ObjectInputStream(socket.getInputStream());
@@ -46,7 +48,23 @@ public class IoTDevice {
             outStream.writeObject(user_id);
             outStream.writeObject(passwd);
 
-            String comand = "";
+            System.out.println();   
+            try {
+                Auth aut = (Auth) inStream.readObject();
+                if(aut == Auth.PASSWORD_NO_MATCH) {
+                    System.out.println(aut.getMessage());
+                    sc.close();
+                    socket.close();
+                    outStream.close();
+                    inStream.close();   
+                    return;
+                }
+                System.out.println(aut.getMessage());
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            String command = "";
             System.out.println("Comandos: ");
             System.out.println("CREATE <dm>  # Criar domínio - utilizador é Owner");
             System.out.println("ADD <user1> <dm> # Adicionar utilizador <user1> ao domínio <dm>");
@@ -56,11 +74,11 @@ public class IoTDevice {
             System.out.println("RT <dm> # Receber as últimas medições de Temperatura de cada dispositivo do domínio <dm>, desde que o utilizador tenha permissões");
             System.out.println("RI <user-id>:<dev_id> # Receber o ficheiro Imagem do dispositivo <userid>:<dev_id> do servidor, desde que o utilizador tenha permissões");
 			System.out.println("exit");
-            while(!(comand.equals("exit") || comand.equals("e"))){
+            while(!(command.equals("exit") || command.equals("e"))){
                 System.out.println("Insira um comando: ");
-                comand = sc.nextLine();
-                outStream.writeObject(comand);
-                String[] cmdSpt = comand.split(" ");
+                command = sc.nextLine();
+                outStream.writeObject(command);
+                String[] cmdSpt = command.split(" ");
             }
             sc.close();
 

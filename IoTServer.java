@@ -1,10 +1,61 @@
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.ParseException;
+import java.util.Scanner;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
+
 
 public class IoTServer {
+
+	public static Auth authenticateUser(String username, String password) {
+        String fileName = "users.txt";
+        Map<String, String> users = new HashMap<>();
+        System.out.println("entrei na função authenticateUser. server 21");
+
+        try {
+            // Read the existing user data from the text file
+            BufferedReader reader = new BufferedReader(new FileReader(fileName));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(":");
+                if (parts.length == 2) {
+                    users.put(parts[0], parts[1]);
+                }
+            }
+            reader.close();
+
+            // Check if the username exists
+            if (users.containsKey(username)) {
+                String storedPassword = users.get(username);
+                // Check if the password matches
+                if (storedPassword.equals(password)) {
+                    return Auth.OK_USER; // Authentication successful
+                } else {
+                    return Auth.PASSWORD_NO_MATCH; // Password doesn't match
+                }
+            } else {
+                // Add the new user to the text file
+                FileWriter writer = new FileWriter(fileName, true);
+                writer.write(username + ":" + password + "\n");
+                writer.close();
+                return Auth.NEW_USER; // New user added successfully
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            return Auth.ERROR; // Error occurred
+        }
+    }
+	
     
     public static void main(String[] args) {
         System.out.println("servidor: main");
@@ -72,7 +123,12 @@ public class IoTServer {
 				}
  			
 				// TODO AUTENTICAR
-				
+				// ler e escrever no ficheiro users.json
+                Auth autenticado = authenticateUser(user_id,passwd);
+
+				outStream.writeObject(autenticado);
+				//outStream.writeBoolean(autenticado);
+				System.out.println(autenticado);
 
                 String comando;
                 boolean loop = true;
@@ -84,7 +140,7 @@ public class IoTServer {
 
                     // TODO PROCESSAR COMANDOS AQUI
 
-                    // if (comandoSplit[0].equals("ADD")) 
+                    //if (comandoSplit[0].equals("ADD")) {}
                 }
 
 				outStream.close();
@@ -94,7 +150,7 @@ public class IoTServer {
 
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
-			}
+			} 
 		}
 	}
 
