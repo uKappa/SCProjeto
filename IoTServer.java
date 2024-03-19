@@ -122,8 +122,7 @@ public class IoTServer {
 					e1.printStackTrace();
 				}
  			
-				// TODO AUTENTICAR
-				// ler e escrever no ficheiro users.json
+				// ler e escrever no ficheiro users
                 Auth autenticado = authenticateUser(user_id,passwd);
 
 				outStream.writeObject(autenticado);
@@ -134,6 +133,10 @@ public class IoTServer {
                     autenticado = authenticateUser(user_id,passwd);
                     System.out.println(autenticado);
                 }
+                String nomeTamanho = (String)inStream.readObject();
+                String[] nomeTamanhoSpt = nomeTamanho.split(" ");
+                // TODO RESPOSTA
+
                 String comando;
                 boolean loop = true;
                 while (loop) {
@@ -143,6 +146,40 @@ public class IoTServer {
                     String[] comandoSplit = comando.split(" ");
 
                     // TODO PROCESSAR COMANDOS AQUI
+
+                    File dominios;
+					FileWriter wr;
+					String dContent = "";
+					Scanner sc1;
+					boolean erro = false;
+                    if(comandoSplit[0].equals("CREATE")) {
+                        boolean existe = false;
+                        try {
+                            dominios = new File("./dominios.txt");
+							sc1 = new Scanner(dominios);
+							while(sc1.hasNextLine()){
+								String line = sc1.nextLine();
+								dContent = dContent.concat(line + "\n");
+								String[] dSplit = line.split("-");
+								if (dSplit[0].equals(comandoSplit[1]))
+									existe = true;
+							}
+							sc1.close();
+							wr = new FileWriter("./dominios.txt");
+                        } catch (Exception e) {
+                            wr = new FileWriter("./dominios.txt");
+                        }
+                        
+                        if (existe) {
+                            outStream.writeObject("NOK");
+                        } else {
+                            dContent = dContent.concat(comandoSplit[1] + "-\n");
+                            outStream.writeObject("OK");
+                        }
+                        wr.write(dContent);
+                        wr.close();
+
+                    }
 
                     if (comandoSplit[0].equals("exit") || comandoSplit[0].equals("e")) {
                         loop = false;

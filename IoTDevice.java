@@ -62,6 +62,11 @@ public class IoTDevice {
                 e.printStackTrace();
             }
 
+            System.out.println("Insira nome e tamnaho do ficheiro executável IoTDevice <nome> <tamanho>: ");
+            String nomeTamanho = sc.nextLine();
+            // TODO erro no formato
+            outStream.writeObject(nomeTamanho);
+
             String command = "";
             System.out.println("Comandos: ");
             System.out.println("CREATE <dm>  # Criar domínio - utilizador é Owner");
