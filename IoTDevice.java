@@ -61,7 +61,7 @@ public class IoTDevice {
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
-
+            outStream.writeObject(dev_id);
             System.out.println("Insira nome e tamnaho do ficheiro executável IoTDevice <nome> <tamanho>: ");
             String nomeTamanho = sc.nextLine();
             // TODO erro no formato
