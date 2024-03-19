@@ -173,13 +173,75 @@ public class IoTServer {
                         if (existe) {
                             outStream.writeObject("NOK");
                         } else {
-                            dContent = dContent.concat(comandoSplit[1] + "-\n");
+                            dContent = dContent.concat(comandoSplit[1] + "-" + user_id + "-\n");
                             outStream.writeObject("OK");
                         }
                         wr.write(dContent);
                         wr.close();
-
                     }
+
+
+
+                    if(comandoSplit[0].equals("ADD")){
+                        boolean existeD = false;
+                        boolean perm = false;
+                        boolean existeU = false;
+                        try {
+                            dominios = new File("./dominios.txt");
+							sc1 = new Scanner(dominios);
+							while(sc1.hasNextLine()){
+								String line = sc1.nextLine();
+								dContent = dContent.concat(line);
+								String[] dSplit = line.split("-");
+								if (dSplit[0].equals(comandoSplit[2])){
+                                    existeD = true;
+                                    if (dSplit[1].equals(user_id)) {
+                                        perm = true;
+                                        BufferedReader reader = new BufferedReader(new FileReader("users.txt"));
+                                        String line2;
+                                        while ((line2 = reader.readLine()) != null && !existeU) {
+                                            String[] parts = line2.split(":");
+                                            if (parts[0].equals(comandoSplit[1])) {
+                                                existeU = true;
+                                            }
+                                        }
+                                        reader.close();
+                                        if (existeU) {
+                                            dContent = dContent.concat(comandoSplit[1] + ":\n");
+                                        }
+                                        else
+                                        dContent = dContent.concat("\n");
+							        }
+                                    else
+                                    dContent = dContent.concat("\n");
+                                }else
+                                dContent = dContent.concat("\n");
+                            }
+							sc1.close();
+							wr = new FileWriter("./dominios.txt");
+                        } catch (Exception e) {
+                            wr = new FileWriter("./dominios.txt");
+                        }
+                        
+                        if (!existeD) {
+                            outStream.writeObject("NODM");
+                        } else {
+                            if (!perm) {
+                                outStream.writeObject("NOPERM");
+                            } else {
+                                if (!existeU) {
+                                    outStream.writeObject("NOUSER");
+                                } else {
+                                    outStream.writeObject("OK");
+                                }
+                            }
+                        }
+                        wr.write(dContent);
+                        wr.close();
+                    }
+
+
+
 
                     if (comandoSplit[0].equals("exit") || comandoSplit[0].equals("e")) {
                         loop = false;
