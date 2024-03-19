@@ -129,7 +129,11 @@ public class IoTServer {
 				outStream.writeObject(autenticado);
 				//outStream.writeBoolean(autenticado);
 				System.out.println(autenticado);
-
+                while (autenticado == Auth.PASSWORD_NO_MATCH) {
+                    passwd = (String)inStream.readObject();
+                    autenticado = authenticateUser(user_id,passwd);
+                    System.out.println(autenticado);
+                }
                 String comando;
                 boolean loop = true;
                 while (loop) {
@@ -140,7 +144,11 @@ public class IoTServer {
 
                     // TODO PROCESSAR COMANDOS AQUI
 
-                    //if (comandoSplit[0].equals("ADD")) {}
+                    if (comandoSplit[0].equals("exit") || comandoSplit[0].equals("e")) {
+                        loop = false;
+						System.out.println("User " + user_id + " desconectado");
+						outStream.writeObject("Foi desconectado com sucesso");                        
+                    }
                 }
 
 				outStream.close();

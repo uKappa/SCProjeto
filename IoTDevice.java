@@ -53,11 +53,9 @@ public class IoTDevice {
                 Auth aut = (Auth) inStream.readObject();
                 if(aut == Auth.PASSWORD_NO_MATCH) {
                     System.out.println(aut.getMessage());
-                    sc.close();
-                    socket.close();
-                    outStream.close();
-                    inStream.close();   
-                    return;
+                    System.out.println("Insira a sua password: ");
+                    passwd = sc.nextLine();
+                    outStream.writeObject(passwd);
                 }
                 System.out.println(aut.getMessage());
             } catch (ClassNotFoundException e) {
@@ -78,11 +76,12 @@ public class IoTDevice {
                 System.out.println("Insira um comando: ");
                 command = sc.nextLine();
                 outStream.writeObject(command);
-                String[] cmdSpt = command.split(" ");
+                //String[] cmdSpt = command.split(" ");
+                System.out.println(inStream.readObject());
             }
             sc.close();
 
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
         

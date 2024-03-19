@@ -2,3 +2,5 @@ goncaz:1234
 galamba:naoministro
 josesocrates:meuamigo
 votarnoadn:pqmeenganei
+Fernando:1234
+votaradn:1234
