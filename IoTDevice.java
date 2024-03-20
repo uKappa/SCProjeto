@@ -1,4 +1,8 @@
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -81,7 +85,27 @@ public class IoTDevice {
                 System.out.println("Insira um comando: ");
                 command = sc.nextLine();
                 outStream.writeObject(command);
-                //String[] cmdSpt = command.split(" ");
+                String[] cmdSpt = command.split(" ");
+                if (cmdSpt[0].equals("EI")) {
+                    if (inStream.readObject().equals("waiting")) {
+                        try {
+                            File img = new File("./cli/"+cmdSpt[1]);
+                            FileInputStream fin = new FileInputStream(img);
+                            outStream.writeObject("existe");
+                            InputStream input = new BufferedInputStream(fin);
+                            outStream.writeObject((int) img.length());
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            while ((bytesRead = input.read(buffer)) != -1) {
+                                outStream.write(buffer, 0, bytesRead);
+                            }
+                            input.close();
+                        } catch (Exception e) {
+                            outStream.writeObject("não existe");
+                            System.out.println("jpg não existe");
+                        }
+                    }         
+                }
                 System.out.println(inStream.readObject());
             }
             sc.close();

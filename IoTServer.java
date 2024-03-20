@@ -1,11 +1,14 @@
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.ParseException;
@@ -323,11 +326,66 @@ public class IoTServer {
                         }
                         wr.write(dContent);
                         wr.close();
-
-
-
                     }
 
+
+
+
+                    if (comandoSplit[0].equals("ET")){
+                        
+                        try {
+                            float temp = Float.parseFloat(comandoSplit[1]);
+                        } catch (Exception e) {
+                            outStream.writeObject("NOK");
+                        }
+                        outStream.writeObject("OK");
+                    }
+
+
+
+
+
+
+                    if (comandoSplit[0].equals("EI")){
+
+                        outStream.writeObject("waiting");
+                        Boolean existe = inStream.readObject().equals("existe");
+                        if (existe) {
+                            File img = new File("./ser/"+comandoSplit[1]);
+                            FileOutputStream fout = new FileOutputStream(img);
+                            OutputStream output = new BufferedOutputStream(fout);
+                            byte[] buffer = new byte[1024];
+                            int bytesRead;
+                            int fileSize;
+
+                            try {
+                                fileSize = (int) inStream.readObject();
+                                int totalSize = fileSize;
+
+                                while (totalSize > 0) {
+                                    if (totalSize >= 1024) {
+                                        bytesRead = inStream.read(buffer,0,1024);
+                                    } else {
+                                        bytesRead = inStream.read(buffer,0,totalSize);
+                                    }
+                                    output.write(buffer,0,bytesRead);
+                                    totalSize -= bytesRead;
+                                }
+                                output.close();
+                                fout.close();
+                                
+                            } catch (Exception e) {
+                                outStream.writeObject("NOK");
+                            }
+                            output.write(buffer, 0, 1024);
+                            outStream.writeObject("OK");
+                        } else {
+                            outStream.writeObject("NOK");
+                        }
+                        
+
+                    }
+                    
 
 
 
