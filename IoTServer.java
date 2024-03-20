@@ -11,6 +11,7 @@ import java.net.Socket;
 import java.text.ParseException;
 import java.util.Scanner;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
@@ -196,6 +197,7 @@ public class IoTServer {
                         boolean existeD = false;
                         boolean perm = false;
                         boolean existeU = false;
+                        boolean done = false;
                         try {
                             dominios = new File("./dominios.txt");
 							sc1 = new Scanner(dominios);
@@ -213,10 +215,14 @@ public class IoTServer {
                                             String[] parts = line2.split(":");
                                             if (parts[0].equals(comandoSplit[1])) {
                                                 existeU = true;
+                                                String[] usersAdded = dSplit[2].split(":");
+                                                if (Arrays.stream(usersAdded).anyMatch(comandoSplit[1]::equals) || dSplit[1].equals(comandoSplit[1])) {
+                                                    done = true;
+                                                }
                                             }
                                         }
                                         reader.close();
-                                        if (existeU) {
+                                        if (existeU && !done) {
                                             dContent = dContent.concat(comandoSplit[1] + ":-" + dSplit[3]+"\n");
                                         }
                                         else
@@ -257,29 +263,45 @@ public class IoTServer {
 
                         boolean existeD = false;
                         boolean perm = false;
+                        boolean permAux = false;
+                        boolean done = false;
                         try {
                             dominios = new File("./dominios.txt");
 							sc1 = new Scanner(dominios);
 							while(sc1.hasNextLine()){
-                                perm = false;
+                                permAux = false;
 								String line = sc1.nextLine();
 								dContent = dContent.concat(line);
 								String[] dSplit = line.split("-");
 								if (dSplit[0].equals(comandoSplit[1])){
                                     existeD = true;
-                                    if(user_id.equals(dSplit[1]))
+                                    if(user_id.equals(dSplit[1])){
+                                        permAux = true;
                                         perm = true;
+                                    }
                                     String[] usersSpt = dSplit[2].split(":");
                                     int i = 0;
-                                    while (!perm && i < usersSpt.length) {
-                                        if (usersSpt[i].equals(user_id))
+                                    while (!permAux && i < usersSpt.length) {
+                                        if (usersSpt[i].equals(user_id)){
+                                            permAux = true;
                                             perm = true;
-                                           
+                                        }                                           
                                         i++;
                                     }
+                                    if (permAux) {
+                                        String[] devicesAdded = dSplit[3].split(":");
+                                        for (String dev : devicesAdded) {
+                                            if (dev.equals(Integer.toString(dev_id))) {
+                                                done = true;
+                                            }
+                                        }
+                                    }
                                 }
-                                if (perm) 
-                                    dContent = dContent.concat(dev_id +"\n");
+                                
+                                
+                                
+                                if (permAux && !done) 
+                                    dContent = dContent.concat(":" + dev_id +"\n");
                                 else
                                     dContent = dContent.concat("\n");
 							}
