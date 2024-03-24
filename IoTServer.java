@@ -375,7 +375,7 @@ public class IoTServer {
                                 
                                 
                                 if (permAux && !done) 
-                                    dContent = dContent.concat(":" + dev_id +"\n");
+                                    dContent = dContent.concat(dev_id +":\n");
                                 else
                                     dContent = dContent.concat("\n");
 							}
