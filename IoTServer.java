@@ -1,11 +1,15 @@
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -14,12 +18,17 @@ import java.net.Socket;
 import java.text.ParseException;
 import java.util.Scanner;
 import java.util.Map;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 
 
 public class IoTServer {
+
+    private List<User> users = new ArrayList<>();
+    private Map<Integer, Float> deviceTemperatures = new HashMap<>();
 
 	public static Auth authenticateUser(String username, String password) {
         String fileName = "users.txt";
@@ -59,6 +68,56 @@ public class IoTServer {
             return Auth.ERROR; // Error occurred
         }
     }
+
+    // Method to change image name for a specific user with given user ID and device ID
+    public void changeUserImageName(String userId, int deviceId, String newImgName) {
+        for (User user : users) {
+            if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
+                user.setImgName(newImgName);
+                System.out.println("Image name updated for user " + userId + " with device ID " + deviceId);
+                return; // Exit loop once user is found and image name is updated
+            }
+        }
+        // If user with given ID and device ID pair is not found
+        System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
+    }
+
+    // Method to disconnect a specific user with given user ID and device ID
+    public void disconnectUser(String userId, int deviceId) {
+        for (User user : users) {
+            if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
+                user.setConectado(false); // Setting connected attribute to false
+                System.out.println("User " + userId + " with device ID " + deviceId + " disconnected");
+                return; // Exit loop once user is found and disconnected
+            }
+        }
+        // If user with given ID and device ID pair is not found
+        System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
+    }
+
+
+    public void addUserOrUpdateConnection(String userId, int deviceId) {
+        boolean found = false;
+        for (User user : users) {
+            if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
+                found = true;
+                if (!user.isConectado()) {
+                    user.setConectado(true);
+                    System.out.println("User " + userId + " with device ID " + deviceId + " connected");
+                } else {
+                    user.setConectado(false);
+                    System.out.println("User " + userId + " with device ID " + deviceId + " disconnected");
+                }
+                break;
+            }
+        }
+        if (!found) {
+            users.add(new User(userId, deviceId, "", true));
+            System.out.println("New user added: " + userId + " with device ID " + deviceId);
+        }
+    }
+    
+
 	
     
     public static void main(String[] args) {
@@ -109,7 +168,8 @@ public class IoTServer {
 			System.out.println("thread do server para cada cliente");
 		}
  
-		public void run(){
+		@SuppressWarnings("unlikely-arg-type")
+        public void run(){
 			try {
 				ObjectOutputStream outStream = new ObjectOutputStream(socket.getOutputStream());
 				ObjectInputStream inStream = new ObjectInputStream(socket.getInputStream());
@@ -141,6 +201,17 @@ public class IoTServer {
                 String nomeTamanho = (String)inStream.readObject();
                 String[] nomeTamanhoSpt = nomeTamanho.split(" ");
                 // TODO RESPOSTA
+
+
+                addUserOrUpdateConnection(user_id,dev_id);                
+                // add return to function above and make the cliente disconnect in case user is connected
+                
+                if (!deviceTemperatures.containsKey(dev_id)) {
+                    deviceTemperatures.put(dev_id, null);
+                } else {
+                    System.out.println("Device with ID " + dev_id + " already exists in the map.");
+                }
+                
 
                 String comando;
                 boolean loop = true;
@@ -335,6 +406,9 @@ public class IoTServer {
                         
                         try {
                             float temp = Float.parseFloat(comandoSplit[1]);
+                            deviceTemperatures.put(dev_id, temp);
+                            System.out.println("Temperature updated for device ID " + dev_id + " to " + temp);
+
                         } catch (Exception e) {
                             outStream.writeObject("NOK");
                         }
@@ -379,13 +453,124 @@ public class IoTServer {
                             }
                             output.write(buffer, 0, 1024);
                             outStream.writeObject("OK");
+                            changeUserImageName(user_id, dev_id, comandoSplit[1]);
                         } else {
                             outStream.writeObject("NOK");
                         }
                         
 
                     }
+
+
+
+
+
                     
+                    if (comandoSplit[0].equals("RT")) {
+                        
+                        boolean existeD = false;
+                        boolean perm = false;
+                        boolean nodata = true;
+                        try {
+                            dominios = new File("./dominios.txt");
+						    sc1 = new Scanner(dominios);
+                            while(sc1.hasNextLine()){
+								String line = sc1.nextLine();
+								String[] dSplit = line.split("-");
+								if (dSplit[0].equals(comandoSplit[1])){
+                                    existeD = true;
+                                
+                                    String[] usersSpt = dSplit[2].split(":");
+                                    int i = 0;
+
+                                    if (user_id.equals(dSplit[1])) {
+                                        perm = true;
+                                    }
+
+                                    while (!perm && i < usersSpt.length) {
+                                        if (usersSpt[i].equals(user_id)){
+                                            perm = true;
+                                        }                                           
+                                        i++;
+                                    }
+
+                                    if(perm){
+
+                                        File tempFile = new File("./ser/temperature_data.txt");
+                                        List<String> devices = Arrays.asList(dSplit[3].split(":"));
+
+                                        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                                                    // Escrever os dados de temperatura no arquivo de texto
+                                                    for (Map.Entry<Integer, Float> entry : deviceTemperatures.entrySet()) {
+                                                        if (devices.contains(entry.getKey().toString())) {
+                                                            nodata = false;
+                                                            writer.write("device: "+entry.getKey() + " -> temperatura: " + entry.getValue() + "\n");
+                                                        }
+
+                                                    }
+                                                } catch (IOException e) {
+                                                    System.err.println("Erro ao escrever no arquivo temporário: " + e.getMessage());
+                                                    
+                                                }
+
+                                                // Obter o tamanho do arquivo
+                                                long fileSize = tempFile.length();
+
+                                                if (!nodata) {
+                                                    outStream.writeObject("waiting");
+
+                                                    FileInputStream fin = new FileInputStream(tempFile);
+                                                    InputStream input = new BufferedInputStream(fin);
+                                                    outStream.writeObject((long) fileSize);
+                                                    byte[] buffer = new byte[1024];
+                                                    int bytesRead;
+                                                    while ((bytesRead = input.read(buffer)) != -1) {
+                                                        outStream.write(buffer, 0, bytesRead);
+                                                    }
+                                                    input.close();
+
+
+
+                                                } else {
+                                                    outStream.writeObject("not waiting");
+                                                }
+
+
+                                    }
+                                }
+                            }
+                            sc1.close();
+                            
+                        } catch (Exception e) {
+                            
+                        }
+
+                        if (!existeD) {
+                            outStream.writeObject("NODM");
+                        } else {
+                            if (!perm) {
+                                outStream.writeObject("NOPERM");
+                            } else {
+                                if (nodata) {
+                                    outStream.writeObject("NODATA");
+                                } else {
+                                    outStream.writeObject("OK");
+                                }
+                            }
+                        }
+
+
+                    }
+                
+
+
+
+
+                    if (comandoSplit[0].equals("RI")){
+
+                    }
+
+
 
 
 

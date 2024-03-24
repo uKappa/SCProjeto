@@ -1,10 +1,14 @@
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
@@ -86,6 +90,9 @@ public class IoTDevice {
                 command = sc.nextLine();
                 outStream.writeObject(command);
                 String[] cmdSpt = command.split(" ");
+
+
+
                 if (cmdSpt[0].equals("EI")) {
                     if (inStream.readObject().equals("waiting")) {
                         try {
@@ -106,6 +113,52 @@ public class IoTDevice {
                         }
                     }         
                 }
+
+
+
+
+                if (cmdSpt[0].equals("RT")) {
+                    if (inStream.readObject().equals("waiting")){
+                        File tempFile = new File("./cli/temperature_data.txt");
+                        FileOutputStream fout = new FileOutputStream(tempFile);
+                        OutputStream output = new BufferedOutputStream(fout);
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        long fileSize;
+                        try {
+                            fileSize = (long) inStream.readObject();
+                            int totalSize = Math.toIntExact(fileSize);
+
+                            while (totalSize > 0) {
+                                if (totalSize >= 1024) {
+                                    bytesRead = inStream.read(buffer,0,1024);
+                                } else {
+                                    bytesRead = inStream.read(buffer,0,totalSize);
+                                }
+                                output.write(buffer,0,bytesRead);
+                                totalSize -= bytesRead;
+                            }
+                            output.close();
+                            fout.close();
+                            
+                        } catch (Exception e) {
+                            
+                        }
+                        output.write(buffer, 0, 1024);
+                    }
+                }
+
+
+
+
+
+
+
+
+
+                
+
+
                 System.out.println(inStream.readObject());
             }
             sc.close();
