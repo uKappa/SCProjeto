@@ -152,7 +152,37 @@ public class IoTDevice {
 
 
 
+                if (cmdSpt[0].equals("RI")) {
+                    if (inStream.readObject().equals("waiting")){
+                        String imgName = (String)inStream.readObject();
+                        File img = new File("./cli/" + imgName);
+                        FileOutputStream fout = new FileOutputStream(img);
+                        OutputStream output = new BufferedOutputStream(fout);
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        long fileSize;
+                        try {
+                            fileSize = (long) inStream.readObject();
+                            int totalSize = Math.toIntExact(fileSize);
 
+                            while (totalSize > 0) {
+                                if (totalSize >= 1024) {
+                                    bytesRead = inStream.read(buffer,0,1024);
+                                } else {
+                                    bytesRead = inStream.read(buffer,0,totalSize);
+                                }
+                                output.write(buffer,0,bytesRead);
+                                totalSize -= bytesRead;
+                            }
+                            output.close();
+                            fout.close();
+                            
+                        } catch (Exception e) {
+                            
+                        }
+                        output.write(buffer, 0, 1024);
+                    }
+                }
 
 
 

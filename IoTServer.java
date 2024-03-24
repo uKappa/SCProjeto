@@ -568,6 +568,53 @@ public class IoTServer {
 
                     if (comandoSplit[0].equals("RI")){
 
+                        boolean existeID = false;
+                        boolean perm = false;
+                        String[] userDev = comandoSplit[1].split(":");
+                        String imgName = "";
+                        for (User user : users) {
+                            if (user.getUserId().equals(userDev[0]) && user.getDeviceId() == Integer.parseInt(userDev[1])){
+                                existeID = true;
+                                imgName = user.getImgName();
+                            }
+                        }
+
+                        if (existeID && !imgName.equals("")) {
+                            try {
+                                File img = new File("./ser/" + imgName);
+                                outStream.writeObject("waiting");
+                                outStream.writeObject(imgName);
+                                long fileSize = img.length();
+                                FileInputStream fin = new FileInputStream(img);
+                                InputStream input = new BufferedInputStream(fin);
+                                outStream.writeObject((long) fileSize);
+                                byte[] buffer = new byte[1024];
+                                int bytesRead;
+                                while ((bytesRead = input.read(buffer)) != -1) {
+                                    outStream.write(buffer, 0, bytesRead);
+                                }
+                                input.close();
+
+                            } catch (Exception e) {
+                                outStream.writeObject("not waiting");
+                            }
+                            
+                            
+                            
+                        }else{
+                            outStream.writeObject("not waiting");
+                        }
+                        
+                        if (!existeID) {
+                            outStream.writeObject("NOID");
+                        } else {
+                            if (imgName.equals("")) {
+                                outStream.writeObject("NODATA");
+                            } else {
+                                outStream.writeObject("OK");
+                            }
+                        }
+
                     }
 
 
