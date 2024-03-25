@@ -322,7 +322,11 @@ public class IoTServer {
                                 if (!existeU) {
                                     outStream.writeObject("NOUSER");
                                 } else {
-                                    outStream.writeObject("OK");
+                                    if (done) {
+                                        outStream.writeObject("NOK");
+                                    } else {
+                                        outStream.writeObject("OK");
+                                    } 
                                 }
                             }
                         }
@@ -391,7 +395,11 @@ public class IoTServer {
                             if (!perm) {
                                 outStream.writeObject("NOPERM");
                             } else {
-                                outStream.writeObject("OK");
+                                if (done) {
+                                    outStream.writeObject("NOK");
+                                } else {
+                                    outStream.writeObject("OK");
+                                }
                             }
                             
                         }
