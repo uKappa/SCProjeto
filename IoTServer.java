@@ -33,7 +33,7 @@ public class IoTServer {
 	public static Auth authenticateUser(String username, String password) {
         String fileName = "users.txt";
         Map<String, String> users = new HashMap<>();
-        System.out.println("entrei na função authenticateUser. server 21");
+        //System.out.println("entrei na função authenticateUser. server 21");
 
         try {
             // Read the existing user data from the text file
@@ -183,7 +183,6 @@ public class IoTServer {
 					user_id = (String)inStream.readObject();
 					passwd = (String)inStream.readObject();
                     System.out.println(user_id);
-					System.out.println("thread: depois de receber a password e o user_id");
 				}catch (ClassNotFoundException e1) {
 					e1.printStackTrace();
 				}
