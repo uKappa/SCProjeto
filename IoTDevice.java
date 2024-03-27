@@ -76,15 +76,27 @@ public class IoTDevice {
             outStream.writeObject(nomeTamanho);
 
             String command = "";
-            System.out.println("Comandos: ");
-            System.out.println("CREATE <dm>  # Criar domínio - utilizador é Owner");
-            System.out.println("ADD <user1> <dm> # Adicionar utilizador <user1> ao domínio <dm>");
-            System.out.println("RD <dm>  # Registar o Dispositivo atual no domínio <dm>");
-            System.out.println("ET <float> # Enviar valor <float> de Temperatura para o servidor");
-            System.out.println("EI <filename.jpg> # Enviar Imagem <filename.jpg> para o servidor");
-            System.out.println("RT <dm> # Receber as últimas medições de Temperatura de cada dispositivo do domínio <dm>, desde que o utilizador tenha permissões");
-            System.out.println("RI <user-id>:<dev_id> # Receber o ficheiro Imagem do dispositivo <userid>:<dev_id> do servidor, desde que o utilizador tenha permissões");
-			System.out.println("exit");
+
+            if ((boolean)inStream.readObject()) {
+                command = "e";
+                outStream.writeObject(command);
+                System.out.println(inStream.readObject());
+            }else{
+
+                System.out.println("Comandos: ");
+                System.out.println("CREATE <dm>  # Criar domínio - utilizador é Owner");
+                System.out.println("ADD <user1> <dm> # Adicionar utilizador <user1> ao domínio <dm>");
+                System.out.println("RD <dm>  # Registar o Dispositivo atual no domínio <dm>");
+                System.out.println("ET <float> # Enviar valor <float> de Temperatura para o servidor");
+                System.out.println("EI <filename.jpg> # Enviar Imagem <filename.jpg> para o servidor");
+                System.out.println("RT <dm> # Receber as últimas medições de Temperatura de cada dispositivo do domínio <dm>, desde que o utilizador tenha permissões");
+                System.out.println("RI <user-id>:<dev_id> # Receber o ficheiro Imagem do dispositivo <userid>:<dev_id> do servidor, desde que o utilizador tenha permissões");
+                System.out.println("exit");
+
+
+            }
+
+
             while(!(command.equals("exit") || command.equals("e"))){
                 System.out.println("Insira um comando: ");
                 command = sc.nextLine();

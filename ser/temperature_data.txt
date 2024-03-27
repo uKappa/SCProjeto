@@ -1,1 +1,2 @@
-device: 2 -> temperatura: 22.1
+device: 2 -> temperatura: null
+device: 3 -> temperatura: 22.1
