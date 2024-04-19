@@ -126,13 +126,26 @@ public class IoTServer {
         System.out.println("servidor: main");
 		IoTServer server = new IoTServer();
         int port;
-        if (args.length==0) {
+        String pwdCifra;
+        String keystore;
+        String pwdKeyS;
+        String apiK;
+        if (args.length==4) {
             port = 12345;
+            pwdCifra = args[0];
+            keystore = args[1];
+            pwdKeyS = args[2];
+            apiK = args[3];        
         } else {
             port = Integer.parseInt(args[0]);
+            pwdCifra = args[1];
+            keystore = args[2];
+            pwdKeyS = args[3];
+            apiK = args[4];
         }
 
 		server.startServer(port);
+
     }
 
     public void startServer (int port){

@@ -29,8 +29,11 @@ public class IoTDevice {
             port = 12345;
         }
 
-        int dev_id = Integer.parseInt(args[1]);
-        String user_id = args[2];
+        String trustStore = args[1];
+        String keystore = args[2];
+        String pswKeyS = args[3];
+        int dev_id = Integer.parseInt(args[4]);
+        String user_id = args[5];
 
         String passwd;
 
