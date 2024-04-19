@@ -17,6 +17,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.text.ParseException;
 import java.util.Scanner;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -122,7 +127,7 @@ public class IoTServer {
 
 	
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.out.println("servidor: main");
 		IoTServer server = new IoTServer();
         int port;
@@ -144,24 +149,24 @@ public class IoTServer {
             apiK = args[4];
         }
 
-		server.startServer(port);
+		server.startServer(port,pwdKeyS);
 
     }
 
-    public void startServer (int port){
+    public void startServer (int port, String pwdKeyS) throws IOException{
 		ServerSocket sSoc = null;
 
 
-		try {
-			sSoc = new ServerSocket(port);
-		} catch (IOException e) {
-			System.err.println(e.getMessage());
-			System.exit(-1);
-		}
-         
+        System.setProperty("javax.net.ssl.keyStore", "keystore.server");
+        System.setProperty("javax.net.ssl.keyStorePassword", pwdKeyS);
+        System.setProperty("javax.net.ssl.keyStoreAlias", "servidor");
+        ServerSocketFactory ssf = SSLServerSocketFactory.getDefault( );
+        SSLServerSocket ss = (SSLServerSocket) ssf.createServerSocket(port);
+
+
 		while(true) {
 			try {
-				Socket inSoc = sSoc.accept();
+				Socket inSoc = ss.accept();
 				ServerThread newServerThread = new ServerThread(inSoc);
 				newServerThread.start();
 		    }

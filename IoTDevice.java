@@ -13,9 +13,13 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 public class IoTDevice {
     public static void main(String[] args) throws IOException {
-        Socket socket = null;
+        SSLSocket socket = null;
 
         String serverAddress = args[0];
         int port;
@@ -40,8 +44,13 @@ public class IoTDevice {
         System.out.println("Insira a sua password: ");
         passwd = sc.nextLine();
 
+        System.setProperty("javax.net.ssl.trustStore", trustStore);
+        System.setProperty("javax.net.ssl.trustStorePassword", "cliente");
+            
+        SocketFactory sf = SSLSocketFactory.getDefault( );
+
         try {
-            socket = new Socket(host,port);
+            socket = (SSLSocket) sf.createSocket(host,port);
         } catch (IOException e) {
             System.err.println(e.getMessage());
 			System.exit(-1);
