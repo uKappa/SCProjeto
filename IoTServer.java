@@ -18,6 +18,13 @@ import java.net.Socket;
 import java.text.ParseException;
 import java.util.Scanner;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.spec.PBEKeySpec;
+
+import java.security.spec.KeySpec;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
@@ -34,6 +41,22 @@ public class IoTServer {
 
     private List<User> users = new ArrayList<>();
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
+    //private static final String ALGORITHM = "AES";
+
+    private static final int ITERATIONS = 10000;
+
+    private static final byte[] SALT = {
+
+    (byte) 0x1a, (byte) 0x5c, (byte) 0x9a, (byte) 0x12,
+
+    (byte) 0x74, (byte) 0xfa, (byte) 0x18, (byte) 0x29
+
+    }; // Hardcoded salt
+
+    private static final int KEY_LENGTH = 128;
+
+    private static final String ALGORITHM = "PBEWithHmacSHA256AndAES_128";
+
 
 	public static Auth authenticateUser(String username, String password) {
         String fileName = "users.txt";
@@ -149,6 +172,28 @@ public class IoTServer {
             apiK = args[4];
         }
 
+        try {
+
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+           
+            KeySpec keySpec = new PBEKeySpec(pwdCifra.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
+           
+            SecretKey secretKey = keyFactory.generateSecret(keySpec); 
+           
+            // ^ a chave pode ser usada para encriptar ou desencriptar
+           
+           
+           
+            byte[] keyBytes = secretKey.getEncoded();
+           
+            System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
+           
+            } catch (Exception e) {
+           
+            e.printStackTrace();
+           
+            }
+            
 		server.startServer(port,pwdKeyS);
 
     }
