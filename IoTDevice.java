@@ -96,15 +96,17 @@ public class IoTDevice {
 
             outStream.writeObject(user_id);
             outStream.writeObject(passwd);
-
+            
             PrivateKey privateKey = getPrivateKeyFromKeyStore(keystore, pswKeyS);
 
             long nonce = (long) inStream.readObject();
 
+            
+
             // Assinar o nonce com a chave privada
             byte[] signature = signData(privateKey, nonce);
 
-            outStream.writeObject(signature);
+            outStream.writeObject("");
 
             System.out.println();   
             try {

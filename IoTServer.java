@@ -19,6 +19,7 @@ import java.text.ParseException;
 import java.util.Scanner;
 
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
@@ -43,6 +44,7 @@ public class IoTServer {
     private List<User> users = new ArrayList<>();
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
     private static final String ALGORITHM2 = "AES";
+    private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
 
     private static final int ITERATIONS = 10000;
 
@@ -172,6 +174,7 @@ public class IoTServer {
 	
     
     public static void main(String[] args) throws IOException {
+        
         System.out.println("servidor: main");
 		IoTServer server = new IoTServer();
         int port;
@@ -195,18 +198,28 @@ public class IoTServer {
 
         try {
 
-            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+            //gerar uma chave aleatória para utilizar com o AES
+            KeyGenerator kg = KeyGenerator.getInstance("AES");
+            kg.init(128);
+            SecretKey key = kg.generateKey();
+
+            Cipher c = Cipher.getInstance("AES");
+            c.init(Cipher.ENCRYPT_MODE, key);
+
+           /* SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM2);
            
             KeySpec keySpec = new PBEKeySpec(pwdCifra.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
             SecretKey tmp = keyFactory.generateSecret(keySpec);
-            SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
+            SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM2);
            
             // ^ a chave pode ser usada para encriptar ou desencriptar
            
-            Cipher cipher = Cipher.getInstance(ALGORITHM);
+            Cipher cipher = Cipher.getInstance(ALGORITHM2);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
            
-            byte[] keyBytes = secretKey.getEncoded();
+            */ 
+
+            byte[] keyBytes = key.getEncoded();
            
             System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
            
