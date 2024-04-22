@@ -41,7 +41,7 @@ public class IoTServer {
 
     private List<User> users = new ArrayList<>();
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
-    //private static final String ALGORITHM = "AES";
+    private static final String ALGORITHM2 = "AES";
 
     private static final int ITERATIONS = 10000;
 
@@ -182,7 +182,8 @@ public class IoTServer {
            
             // ^ a chave pode ser usada para encriptar ou desencriptar
            
-           
+            Cipher cipher = Cipher.getInstance(ALGORITHM2);
+            cipher.init(Cipher.ENCRYPT_MODE, secretKey);
            
             byte[] keyBytes = secretKey.getEncoded();
            
@@ -193,7 +194,8 @@ public class IoTServer {
             e.printStackTrace();
            
             }
-            
+
+
 		server.startServer(port,pwdKeyS);
 
     }
