@@ -225,6 +225,7 @@ public class IoTServer {
 		ServerSocket sSoc = null;
 
 
+        System.setProperty("jdk.tls.server.protocols", "TLSv1.2");
         System.setProperty("javax.net.ssl.keyStore", "keystore.server");
         System.setProperty("javax.net.ssl.keyStorePassword", pwdKeyS);
         System.setProperty("javax.net.ssl.keyStoreAlias", "servidor");

@@ -73,6 +73,7 @@ public class IoTDevice {
         System.out.println("Insira a sua password: ");
         passwd = sc.nextLine();
 
+        System.setProperty("jdk.tls.server.protocols", "TLSv1.2");
         System.setProperty("javax.net.ssl.trustStore", trustStore);
         System.setProperty("javax.net.ssl.trustStorePassword", "cliente");
             
