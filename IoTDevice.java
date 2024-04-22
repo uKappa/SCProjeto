@@ -12,12 +12,41 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
-
+import java.nio.ByteBuffer;
+import java.security.*;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+
 public class IoTDevice {
+
+    // Método para obter a chave privada do keystore
+    private static PrivateKey getPrivateKeyFromKeyStore(String keystore, String password) {
+        try {
+            KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+            ks.load(new FileInputStream(keystore), password.toCharArray());
+            return (PrivateKey) ks.getKey("privateKeyAlias", password.toCharArray());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Método para assinar os dados com a chave privada
+    private static byte[] signData(PrivateKey privateKey, long data) {
+        try {
+            Signature signature = Signature.getInstance("PBEWithHmacSHA256AndAES_128");
+            signature.initSign(privateKey);
+            signature.update(ByteBuffer.allocate(Long.BYTES).putLong(data).array());
+            return signature.sign();
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+
     public static void main(String[] args) throws IOException {
         SSLSocket socket = null;
 
@@ -67,6 +96,15 @@ public class IoTDevice {
 
             outStream.writeObject(user_id);
             outStream.writeObject(passwd);
+
+            PrivateKey privateKey = getPrivateKeyFromKeyStore(keystore, pswKeyS);
+
+            long nonce = (long) inStream.readObject();
+
+            // Assinar o nonce com a chave privada
+            byte[] signature = signData(privateKey, nonce);
+
+            outStream.writeObject(signature);
 
             System.out.println();   
             try {

@@ -24,6 +24,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 
+import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocket;
@@ -56,6 +57,26 @@ public class IoTServer {
     private static final int KEY_LENGTH = 128;
 
     private static final String ALGORITHM = "PBEWithHmacSHA256AndAES_128";
+
+    private static final int NONCE_LENGTH = 8;
+
+    // Gerar nonce aleatório de 8 bytes
+    private long generateNonce() {
+        SecureRandom random = new SecureRandom();
+        byte[] nonceBytes = new byte[NONCE_LENGTH];
+        random.nextBytes(nonceBytes);
+        return bytesToLong(nonceBytes);
+    }
+
+    // Converter bytes para long
+    private long bytesToLong(byte[] bytes) {
+        long result = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            result <<= 8;
+            result |= (bytes[i] & 0xFF);
+        }
+        return result;
+    }
 
 
 	public static Auth authenticateUser(String username, String password) {
@@ -177,12 +198,12 @@ public class IoTServer {
             SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
            
             KeySpec keySpec = new PBEKeySpec(pwdCifra.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
-           
-            SecretKey secretKey = keyFactory.generateSecret(keySpec); 
+            SecretKey tmp = keyFactory.generateSecret(keySpec);
+            SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
            
             // ^ a chave pode ser usada para encriptar ou desencriptar
            
-            Cipher cipher = Cipher.getInstance(ALGORITHM2);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
            
             byte[] keyBytes = secretKey.getEncoded();
@@ -252,6 +273,14 @@ public class IoTServer {
 					e1.printStackTrace();
 				}
  			
+                // 1) Enviar nonce aleatório ao cliente
+                long nonce = generateNonce();
+                outStream.writeLong(nonce);
+                outStream.flush();
+
+                // 2) Receber resposta do cliente (assinatura do nonce)
+                byte[] signature = (byte[]) inStream.readObject();
+
 				// ler e escrever no ficheiro users
                 Auth autenticado = authenticateUser(user_id,passwd);
 
