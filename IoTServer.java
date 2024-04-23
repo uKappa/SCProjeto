@@ -2,6 +2,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -110,9 +111,38 @@ public class IoTServer {
         }
     }
 
-    private static byte[] calculateHash(byte[] data) throws NoSuchAlgorithmException {
+    private byte[] calculateHash(byte[] nonce) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        return digest.digest(data);
+        File device = new File("IotDevice.java");
+        byte[] data = fileToByteArray(device);
+        digest.update(data);
+        digest.update(nonce);
+        return digest.digest();
+    }
+
+    private static byte[] fileToByteArray(File file) throws IOException {
+        // Verifica se o arquivo existe
+        if (!file.exists() || !file.isFile()) {
+            throw new IllegalArgumentException("Arquivo inválido: " + file.getPath());
+        }
+    
+        // Cria um fluxo de entrada para ler os bytes do arquivo
+        FileInputStream fis = new FileInputStream(file);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    
+        // Lê os bytes do arquivo e escreve-os no ByteArrayOutputStream
+        byte[] buffer = new byte[1024];
+        int bytesRead;
+        while ((bytesRead = fis.read(buffer)) != -1) {
+            baos.write(buffer, 0, bytesRead);
+        }
+    
+        // Fecha os fluxos de entrada
+        fis.close();
+        baos.close();
+    
+        // Retorna o array de bytes resultante
+        return baos.toByteArray();
     }
 
 
