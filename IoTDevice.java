@@ -18,7 +18,6 @@ import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-
 public class IoTDevice {
 
     // Método para obter a chave privada do keystore
@@ -26,7 +25,7 @@ public class IoTDevice {
         try {
             KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
             ks.load(new FileInputStream(keystore), password.toCharArray());
-            return (PrivateKey) ks.getKey("privateKeyAlias", password.toCharArray());
+            return (PrivateKey) ks.getKey("cliente", password.toCharArray());
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -105,9 +104,9 @@ public class IoTDevice {
 
             // Assinar o nonce com a chave privada
             byte[] signature = signData(privateKey, nonce);
-
-            outStream.writeObject("");
-
+            outStream.writeObject(signature);
+            outStream.flush();
+ 
             System.out.println();   
             try {
                 Auth aut = (Auth) inStream.readObject();

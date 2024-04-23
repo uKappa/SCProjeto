@@ -59,7 +59,7 @@ public class IoTServer {
     private static final int KEY_LENGTH = 128;
 
     private static final String ALGORITHM = "PBEWithHmacSHA256AndAES_128";
-
+                                            
     private static final int NONCE_LENGTH = 8;
 
     // Gerar nonce aleatório de 8 bytes
@@ -198,28 +198,19 @@ public class IoTServer {
 
         try {
 
-            //gerar uma chave aleatória para utilizar com o AES
-            KeyGenerator kg = KeyGenerator.getInstance("AES");
-            kg.init(128);
-            SecretKey key = kg.generateKey();
-
-            Cipher c = Cipher.getInstance("AES");
-            c.init(Cipher.ENCRYPT_MODE, key);
-
-           /* SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM2);
+           SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
            
             KeySpec keySpec = new PBEKeySpec(pwdCifra.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
             SecretKey tmp = keyFactory.generateSecret(keySpec);
-            SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM2);
+            SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
            
             // ^ a chave pode ser usada para encriptar ou desencriptar
            
-            Cipher cipher = Cipher.getInstance(ALGORITHM2);
+            Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
-           
-            */ 
+            
 
-            byte[] keyBytes = key.getEncoded();
+            byte[] keyBytes = secretKey.getEncoded();
            
             System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
            
@@ -230,7 +221,11 @@ public class IoTServer {
             }
 
 
-		server.startServer(port,pwdKeyS);
+		try {
+            server.startServer(port, pwdKeyS);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -277,22 +272,23 @@ public class IoTServer {
 
 				String user_id = null;
 				String passwd = null;
-			
 				try {
 					user_id = (String)inStream.readObject();
 					passwd = (String)inStream.readObject();
                     System.out.println(user_id);
 				}catch (ClassNotFoundException e1) {
 					e1.printStackTrace();
+                    
 				}
- 			
+                
+    
                 // 1) Enviar nonce aleatório ao cliente
                 long nonce = generateNonce();
-                outStream.writeLong(nonce);
+                outStream.writeObject(nonce);
                 outStream.flush();
-
                 // 2) Receber resposta do cliente (assinatura do nonce)
                 byte[] signature = (byte[]) inStream.readObject();
+                 
 
 				// ler e escrever no ficheiro users
                 Auth autenticado = authenticateUser(user_id,passwd);
