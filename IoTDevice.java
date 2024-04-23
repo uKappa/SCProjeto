@@ -35,7 +35,7 @@ public class IoTDevice {
     // Método para assinar os dados com a chave privada
     private static byte[] signData(PrivateKey privateKey, long data) {
         try {
-            Signature signature = Signature.getInstance("SHA256withRSA ");
+            Signature signature = Signature.getInstance("SHA256withRSA");
             signature.initSign(privateKey);
             signature.update(ByteBuffer.allocate(Long.BYTES).putLong(data).array());
             return signature.sign();
@@ -112,7 +112,7 @@ public class IoTDevice {
             outStream.writeObject(passwd);
             
             PrivateKey privateKey = getPrivateKeyFromKeyStore(keystore, pswKeyS);
-
+            
             long nonce = (long) inStream.readObject();
 
             

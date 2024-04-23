@@ -18,6 +18,7 @@ import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.util.Scanner;
 
@@ -110,7 +111,7 @@ public class IoTServer {
             System.out.println("Falha ao enviar o C2FA por e-mail para " + userEmail);
         }
     }
-
+/* 
     private byte[] calculateHash(byte[] nonce) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         File device = new File("IotDevice.java");
@@ -118,7 +119,7 @@ public class IoTServer {
         digest.update(data);
         digest.update(nonce);
         return digest.digest();
-    }
+    } */
 
     private static byte[] fileToByteArray(File file) throws IOException {
         // Verifica se o arquivo existe
@@ -233,6 +234,21 @@ public class IoTServer {
             System.out.println("New user added: " + userId + " with device ID " + deviceId);
         }
         return resp;
+    }
+
+
+    private static final int BUFFER_SIZE = 4096;
+    private static byte[] calculateHash(File file, byte[] nonce) throws NoSuchAlgorithmException, IOException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                digest.update(buffer, 0, bytesRead);
+            }
+            digest.update(nonce);
+        }
+        return digest.digest();
     }
     
 
@@ -383,10 +399,14 @@ public class IoTServer {
                 outStream.writeObject(nonce2);
                 outStream.flush();
                 byte[] hash = (byte[]) inStream.readObject();
-                byte[] calchash = calculateHash(hash);
+                File device = new File("IoTDevice.java");
+                ByteBuffer bffr = ByteBuffer.allocate(Long.BYTES);
+                bffr.putLong(nonce2);
+                byte[] calchash = calculateHash(device,bffr.array());
+                
 
                 String tested;
-                if (!hash.equals(calchash)) {
+                if (hash.equals(calchash)) {
                     tested = "NOKTESTED";
                     outStream.writeObject(tested);
                     return;
