@@ -443,457 +443,404 @@ public class IoTServer {
 
 
 
-                    if(comandoSplit[0].equals("CREATE")) {
-                        boolean existe = false;
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            try {
-                                dominios = new File("./dominios.txt");
-                                sc1 = new Scanner(dominios);
-                                while(sc1.hasNextLine()){
-                                    String line = sc1.nextLine();
-                                    dContent = dContent.concat(line + "\n");
-                                    String[] dSplit = line.split("-");
-                                    if (dSplit[0].equals(comandoSplit[1]))
-                                        existe = true;
-                                }
-                                sc1.close();
-                                wr = new FileWriter("./dominios.txt");
-                            } catch (Exception e) {
-                                wr = new FileWriter("./dominios.txt");
-                            }
-                            
-                            if (existe) {
-                                outStream.writeObject("NOK");
+                    switch (comandoSplit[0]) {
+                        case "CREATE":
+                            boolean existe = false;
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("falta de parametros");
                             } else {
-                                dContent = dContent.concat(comandoSplit[1] + "-" + user_id + "-:-:\n");
-                                outStream.writeObject("OK");
+                                try {
+                                    dominios = new File("./dominios.txt");
+                                    sc1 = new Scanner(dominios);
+                                    while (sc1.hasNextLine()) {
+                                        String line = sc1.nextLine();
+                                        dContent = dContent.concat(line + "\n");
+                                        String[] dSplit = line.split("-");
+                                        if (dSplit[0].equals(comandoSplit[1]))
+                                            existe = true;
+                                    }
+                                    sc1.close();
+                                    wr = new FileWriter("./dominios.txt");
+                                } catch (Exception e) {
+                                    wr = new FileWriter("./dominios.txt");
+                                }
+
+                                if (existe) {
+                                    outStream.writeObject("NOK");
+                                } else {
+                                    dContent = dContent.concat(comandoSplit[1] + "-" + user_id + "-:-:\n");
+                                    outStream.writeObject("OK");
+                                }
+                                wr.write(dContent);
+                                wr.close();
                             }
-                            wr.write(dContent);
-                            wr.close();
-                        }
-                        
-                    }
+                            break;
 
+                        case "ADD":
+                            if (comandoSplit.length < 3) {
+                                erro = true;
+                                outStream.writeObject("falta de parametros");
+                            } else {
+                                boolean existeD = false;
+                                boolean perm = false;
+                                boolean existeU = false;
+                                boolean done = false;
+                                try {
+                                    dominios = new File("./dominios.txt");
+                                    sc1 = new Scanner(dominios);
+                                    while (sc1.hasNextLine()) {
+                                        String line = sc1.nextLine();
+                                        String[] dSplit = line.split("-");
+                                        dContent = dContent.concat(dSplit[0] + "-" + dSplit[1] + "-" + dSplit[2]);
+                                        if (dSplit[0].equals(comandoSplit[2])) {
+                                            existeD = true;
+                                            if (dSplit[1].equals(user_id)) {
+                                                perm = true;
+                                                BufferedReader reader = new BufferedReader(new FileReader("users.txt"));
+                                                String line2;
+                                                while ((line2 = reader.readLine()) != null && !existeU) {
+                                                    String[] parts = line2.split(":");
+                                                    if (parts[0].equals(comandoSplit[1])) {
+                                                        existeU = true;
+                                                        String[] usersAdded = dSplit[2].split(":");
+                                                        if (Arrays.stream(usersAdded).anyMatch(comandoSplit[1]::equals) || dSplit[1].equals(comandoSplit[1])) {
+                                                            done = true;
+                                                        }
+                                                    }
+                                                }
+                                                reader.close();
+                                                if (existeU && !done) {
+                                                    dContent = dContent.concat(comandoSplit[1] + ":-" + dSplit[3] + "\n");
+                                                } else
+                                                    dContent = dContent.concat("-" + dSplit[3] + "\n");
+                                            } else
+                                                dContent = dContent.concat("-" + dSplit[3] + "\n");
+                                        } else
+                                            dContent = dContent.concat("-" + dSplit[3] + "\n");
+                                    }
+                                    sc1.close();
+                                    wr = new FileWriter("./dominios.txt");
+                                } catch (Exception e) {
+                                    wr = new FileWriter("./dominios.txt");
+                                }
 
+                                if (!existeD) {
+                                    outStream.writeObject("NODM");
+                                } else {
+                                    if (!perm) {
+                                        outStream.writeObject("NOPERM");
+                                    } else {
+                                        if (!existeU) {
+                                            outStream.writeObject("NOUSER");
+                                        } else {
+                                            if (done) {
+                                                outStream.writeObject("NOK");
+                                            } else {
+                                                outStream.writeObject("OK");
+                                            }
+                                        }
+                                    }
+                                }
+                                wr.write(dContent);
+                                wr.close();
+                            }
+                            break;
 
-
-
-
-
-
-                    if(comandoSplit[0].equals("ADD")){
-                        if (comandoSplit.length < 3) {
-                            erro = true;
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            boolean existeD = false;
-                            boolean perm = false;
-                            boolean existeU = false;
-                            boolean done = false;
-                            try {
-                                dominios = new File("./dominios.txt");
-                                sc1 = new Scanner(dominios);
-                                while(sc1.hasNextLine()){
-                                    String line = sc1.nextLine();
-                                    String[] dSplit = line.split("-");
-                                    dContent = dContent.concat(dSplit[0] + "-" + dSplit[1] + "-" + dSplit[2]);
-                                    if (dSplit[0].equals(comandoSplit[2])){
-                                        existeD = true;
-                                        if (dSplit[1].equals(user_id)) {
-                                            perm = true;
-                                            BufferedReader reader = new BufferedReader(new FileReader("users.txt"));
-                                            String line2;
-                                            while ((line2 = reader.readLine()) != null && !existeU) {
-                                                String[] parts = line2.split(":");
-                                                if (parts[0].equals(comandoSplit[1])) {
-                                                    existeU = true;
-                                                    String[] usersAdded = dSplit[2].split(":");
-                                                    if (Arrays.stream(usersAdded).anyMatch(comandoSplit[1]::equals) || dSplit[1].equals(comandoSplit[1])) {
+                        case "RD":
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("falta de parametros");
+                            } else {
+                                boolean existeD = false;
+                                boolean perm = false;
+                                boolean permAux = false;
+                                boolean done = false;
+                                try {
+                                    dominios = new File("./dominios.txt");
+                                    sc1 = new Scanner(dominios);
+                                    while (sc1.hasNextLine()) {
+                                        permAux = false;
+                                        String line = sc1.nextLine();
+                                        dContent = dContent.concat(line);
+                                        String[] dSplit = line.split("-");
+                                        if (dSplit[0].equals(comandoSplit[1])) {
+                                            existeD = true;
+                                            if (user_id.equals(dSplit[1])) {
+                                                permAux = true;
+                                                perm = true;
+                                            }
+                                            String[] usersSpt = dSplit[2].split(":");
+                                            int i = 0;
+                                            while (!permAux && i < usersSpt.length) {
+                                                if (usersSpt[i].equals(user_id)) {
+                                                    permAux = true;
+                                                    perm = true;
+                                                }
+                                                i++;
+                                            }
+                                            if (permAux) {
+                                                String[] devicesAdded = dSplit[3].split(":");
+                                                for (String dev : devicesAdded) {
+                                                    if (dev.equals(Integer.toString(dev_id))) {
                                                         done = true;
                                                     }
                                                 }
                                             }
-                                            reader.close();
-                                            if (existeU && !done) {
-                                                dContent = dContent.concat(comandoSplit[1] + ":-" + dSplit[3]+"\n");
-                                            }
-                                            else
-                                            dContent = dContent.concat("-" + dSplit[3]+"\n");
                                         }
+
+                                        if (permAux && !done)
+                                            dContent = dContent.concat(dev_id + ":\n");
                                         else
-                                        dContent = dContent.concat("-" + dSplit[3]+"\n");
-                                    }else
-                                    dContent = dContent.concat("-" + dSplit[3]+"\n");
+                                            dContent = dContent.concat("\n");
+                                    }
+                                    sc1.close();
+                                    wr = new FileWriter("./dominios.txt");
+                                } catch (Exception e) {
+                                    wr = new FileWriter("./dominios.txt");
                                 }
-                                sc1.close();
-                                wr = new FileWriter("./dominios.txt");
-                            } catch (Exception e) {
-                                wr = new FileWriter("./dominios.txt");
-                            }
-                            
-                            if (!existeD) {
-                                outStream.writeObject("NODM");
-                            } else {
-                                if (!perm) {
-                                    outStream.writeObject("NOPERM");
+
+                                if (!existeD) {
+                                    outStream.writeObject("NODM");
                                 } else {
-                                    if (!existeU) {
-                                        outStream.writeObject("NOUSER");
+                                    if (!perm) {
+                                        outStream.writeObject("NOPERM");
                                     } else {
                                         if (done) {
                                             outStream.writeObject("NOK");
                                         } else {
                                             outStream.writeObject("OK");
-                                        } 
-                                    }
-                                }
-                            }
-                            wr.write(dContent);
-                            wr.close();
-                            }
-                            
-                    }
-
-
-
-
-                    if(comandoSplit[0].equals("RD")){
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            boolean existeD = false;
-                            boolean perm = false;
-                            boolean permAux = false;
-                            boolean done = false;
-                            try {
-                                dominios = new File("./dominios.txt");
-                                sc1 = new Scanner(dominios);
-                                while(sc1.hasNextLine()){
-                                    permAux = false;
-                                    String line = sc1.nextLine();
-                                    dContent = dContent.concat(line);
-                                    String[] dSplit = line.split("-");
-                                    if (dSplit[0].equals(comandoSplit[1])){
-                                        existeD = true;
-                                        if(user_id.equals(dSplit[1])){
-                                            permAux = true;
-                                            perm = true;
-                                        }
-                                        String[] usersSpt = dSplit[2].split(":");
-                                        int i = 0;
-                                        while (!permAux && i < usersSpt.length) {
-                                            if (usersSpt[i].equals(user_id)){
-                                                permAux = true;
-                                                perm = true;
-                                            }                                           
-                                            i++;
-                                        }
-                                        if (permAux) {
-                                            String[] devicesAdded = dSplit[3].split(":");
-                                            for (String dev : devicesAdded) {
-                                                if (dev.equals(Integer.toString(dev_id))) {
-                                                    done = true;
-                                                }
-                                            }
                                         }
                                     }
-                                    
-                                    
-                                    
-                                    if (permAux && !done) 
-                                        dContent = dContent.concat(dev_id +":\n");
-                                    else
-                                        dContent = dContent.concat("\n");
+
                                 }
-                                sc1.close();
-                                wr = new FileWriter("./dominios.txt");
-                            } catch (Exception e) {
-                                wr = new FileWriter("./dominios.txt");
+                                wr.write(dContent);
+                                wr.close();
                             }
-                            
-                            if (!existeD) {
-                                outStream.writeObject("NODM");
+                            break;
+
+                        case "ET":
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("falta de parametros");
                             } else {
-                                if (!perm) {
-                                    outStream.writeObject("NOPERM");
-                                } else {
-                                    if (done) {
-                                        outStream.writeObject("NOK");
-                                    } else {
-                                        outStream.writeObject("OK");
-                                    }
-                                }
-                                
-                            }
-                            wr.write(dContent);
-                            wr.close();
-                        }
-                        
-                    }
-
-
-
-
-                    if (comandoSplit[0].equals("ET")){
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            try {
-                                float temp = Float.parseFloat(comandoSplit[1]);
-                                deviceTemperatures.put(dev_id, temp);
-                                System.out.println("Temperature updated for device ID " + dev_id + " to " + temp);
-    
-                            } catch (Exception e) {
-                                outStream.writeObject("NOK");
-                            }
-                            outStream.writeObject("OK");
-                        }
-                        
-
-                    }
-
-
-
-
-
-
-                    if (comandoSplit[0].equals("EI")){
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("not waiting");
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            outStream.writeObject("waiting");
-                            boolean existe = inStream.readObject().equals("existe");
-                            if (existe) {
-                                File img = new File("./ser/"+comandoSplit[1]);
-                                FileOutputStream fout = new FileOutputStream(img);
-                                OutputStream output = new BufferedOutputStream(fout);
-                                byte[] buffer = new byte[1024];
-                                int bytesRead;
-                                int fileSize;
-
                                 try {
-                                    fileSize = (int) inStream.readObject();
-                                    int totalSize = fileSize;
+                                    float temp = Float.parseFloat(comandoSplit[1]);
+                                    deviceTemperatures.put(dev_id, temp);
+                                    System.out.println("Temperature updated for device ID " + dev_id + " to " + temp);
 
-                                    while (totalSize > 0) {
-                                        if (totalSize >= 1024) {
-                                            bytesRead = inStream.read(buffer,0,1024);
-                                        } else {
-                                            bytesRead = inStream.read(buffer,0,totalSize);
-                                        }
-                                        output.write(buffer,0,bytesRead);
-                                        totalSize -= bytesRead;
-                                    }
-                                    output.close();
-                                    fout.close();
-                                    
                                 } catch (Exception e) {
                                     outStream.writeObject("NOK");
                                 }
-                                output.write(buffer, 0, 1024);
                                 outStream.writeObject("OK");
-                                changeUserImageName(user_id, dev_id, comandoSplit[1]);
-                            } else {
-                                outStream.writeObject("NOK");
                             }
-                        }
-                        
-                        
+                            break;
 
-                    }
+                        case "EI":
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("not waiting");
+                                outStream.writeObject("falta de parametros");
+                            } else {
+                                outStream.writeObject("waiting");
+                                boolean exists = inStream.readObject().equals("existe");
+                                if (exists) {
+                                    File img = new File("./ser/" + comandoSplit[1]);
+                                    FileOutputStream fout = new FileOutputStream(img);
+                                    OutputStream output = new BufferedOutputStream(fout);
+                                    byte[] buffer = new byte[1024];
+                                    int bytesRead;
+                                    int fileSize;
 
+                                    try {
+                                        fileSize = (int) inStream.readObject();
+                                        int totalSize = fileSize;
 
-
-
-
-                    
-                    if (comandoSplit[0].equals("RT")) {
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("not waiting");
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            boolean existeD = false;
-                            boolean perm = false;
-                            boolean nodata = true;
-                            try {
-                                dominios = new File("./dominios.txt");
-                                sc1 = new Scanner(dominios);
-                                while(sc1.hasNextLine()){
-                                    String line = sc1.nextLine();
-                                    String[] dSplit = line.split("-");
-                                    if (dSplit[0].equals(comandoSplit[1])){
-                                        existeD = true;
-                                    
-                                        String[] usersSpt = dSplit[2].split(":");
-                                        int i = 0;
-
-                                        if (user_id.equals(dSplit[1])) {
-                                            perm = true;
+                                        while (totalSize > 0) {
+                                            if (totalSize >= 1024) {
+                                                bytesRead = inStream.read(buffer, 0, 1024);
+                                            } else {
+                                                bytesRead = inStream.read(buffer, 0, totalSize);
+                                            }
+                                            output.write(buffer, 0, bytesRead);
+                                            totalSize -= bytesRead;
                                         }
+                                        output.close();
+                                        fout.close();
 
-                                        while (!perm && i < usersSpt.length) {
-                                            if (usersSpt[i].equals(user_id)){
+                                    } catch (Exception e) {
+                                        outStream.writeObject("NOK");
+                                    }
+                                    output.write(buffer, 0, 1024);
+                                    outStream.writeObject("OK");
+                                    changeUserImageName(user_id, dev_id, comandoSplit[1]);
+                                } else {
+                                    outStream.writeObject("NOK");
+                                }
+                            }
+                            break;
+
+                        case "RT":
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("not waiting");
+                                outStream.writeObject("falta de parametros");
+                            } else {
+                                boolean existeD = false;
+                                boolean perm = false;
+                                boolean nodata = true;
+                                try {
+                                    dominios = new File("./dominios.txt");
+                                    sc1 = new Scanner(dominios);
+                                    while (sc1.hasNextLine()) {
+                                        String line = sc1.nextLine();
+                                        String[] dSplit = line.split("-");
+                                        if (dSplit[0].equals(comandoSplit[1])) {
+                                            existeD = true;
+
+                                            String[] usersSpt = dSplit[2].split(":");
+                                            int i = 0;
+
+                                            if (user_id.equals(dSplit[1])) {
                                                 perm = true;
-                                            }                                           
-                                            i++;
+                                            }
+
+                                            while (!perm && i < usersSpt.length) {
+                                                if (usersSpt[i].equals(user_id)) {
+                                                    perm = true;
+                                                }
+                                                i++;
+                                            }
+
+                                            if (perm) {
+
+                                                File tempFile = new File("./ser/temperature_data.txt");
+                                                List<String> devices = Arrays.asList(dSplit[3].split(":"));
+
+                                                try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+                                                    // Escrever os dados de temperatura no arquivo de texto
+                                                    for (Map.Entry<Integer, Float> entry : deviceTemperatures.entrySet()) {
+                                                        if (devices.contains(entry.getKey().toString())) {
+                                                            nodata = false;
+                                                            writer.write("device: " + entry.getKey() + " -> temperatura: " + entry.getValue() + "\n");
+                                                        }
+
+                                                    }
+                                                } catch (IOException e) {
+                                                    System.err.println("Erro ao escrever no arquivo temporário: " + e.getMessage());
+
+                                                }
+
+                                                // Obter o tamanho do arquivo
+                                                long fileSize = tempFile.length();
+
+                                                if (!nodata) {
+                                                    outStream.writeObject("waiting");
+
+                                                    FileInputStream fin = new FileInputStream(tempFile);
+                                                    InputStream input = new BufferedInputStream(fin);
+                                                    outStream.writeObject((long) fileSize);
+                                                    byte[] buffer = new byte[1024];
+                                                    int bytesRead;
+                                                    while ((bytesRead = input.read(buffer)) != -1) {
+                                                        outStream.write(buffer, 0, bytesRead);
+                                                    }
+                                                    input.close();
+                                                } else {
+                                                    outStream.writeObject("not waiting");
+                                                }
+                                            } else {
+                                                outStream.writeObject("not waiting");
+                                            }
                                         }
+                                    }
+                                    sc1.close();
 
-                                        if(perm){
+                                } catch (Exception e) {
 
-                                            File tempFile = new File("./ser/temperature_data.txt");
-                                            List<String> devices = Arrays.asList(dSplit[3].split(":"));
+                                }
 
-                                            try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
-                                                        // Escrever os dados de temperatura no arquivo de texto
-                                                        for (Map.Entry<Integer, Float> entry : deviceTemperatures.entrySet()) {
-                                                            if (devices.contains(entry.getKey().toString())) {
-                                                                nodata = false;
-                                                                writer.write("device: "+entry.getKey() + " -> temperatura: " + entry.getValue() + "\n");
-                                                            }
-
-                                                        }
-                                                    } catch (IOException e) {
-                                                        System.err.println("Erro ao escrever no arquivo temporário: " + e.getMessage());
-                                                        
-                                                    }
-
-                                                    // Obter o tamanho do arquivo
-                                                    long fileSize = tempFile.length();
-
-                                                    if (!nodata) {
-                                                        outStream.writeObject("waiting");
-
-                                                        FileInputStream fin = new FileInputStream(tempFile);
-                                                        InputStream input = new BufferedInputStream(fin);
-                                                        outStream.writeObject((long) fileSize);
-                                                        byte[] buffer = new byte[1024];
-                                                        int bytesRead;
-                                                        while ((bytesRead = input.read(buffer)) != -1) {
-                                                            outStream.write(buffer, 0, bytesRead);
-                                                        }
-                                                        input.close();
-
-
-
-                                                    } else {
-                                                        outStream.writeObject("not waiting");
-                                                    }
-
-
-                                        }else{
-                                            outStream.writeObject("not waiting");
+                                if (!existeD) {
+                                    outStream.writeObject("NODM");
+                                } else {
+                                    if (!perm) {
+                                        outStream.writeObject("NOPERM");
+                                    } else {
+                                        if (nodata) {
+                                            outStream.writeObject("NODATA");
+                                        } else {
+                                            outStream.writeObject("OK");
                                         }
                                     }
                                 }
-                                sc1.close();
-                                
-                            } catch (Exception e) {
-                                
                             }
+                            break;
 
-                            if (!existeD) {
-                                outStream.writeObject("NODM");
+                        case "RI":
+                            if (comandoSplit.length < 2) {
+                                erro = true;
+                                outStream.writeObject("not waiting");
+                                outStream.writeObject("falta de parametros");
                             } else {
-                                if (!perm) {
-                                    outStream.writeObject("NOPERM");
+                                boolean existeID = false;
+                                boolean perm = false;
+                                String[] userDev = comandoSplit[1].split(":");
+                                String imgName = "";
+                                for (User user : users) {
+                                    if (user.getUserId().equals(userDev[0]) && user.getDeviceId() == Integer.parseInt(userDev[1])) {
+                                        existeID = true;
+                                        imgName = user.getImgName();
+                                    }
+                                }
+
+                                if (existeID && !imgName.equals("")) {
+                                    try {
+                                        File img = new File("./ser/" + imgName);
+                                        outStream.writeObject("waiting");
+                                        outStream.writeObject(imgName);
+                                        long fileSize = img.length();
+                                        FileInputStream fin = new FileInputStream(img);
+                                        InputStream input = new BufferedInputStream(fin);
+                                        outStream.writeObject((long) fileSize);
+                                        byte[] buffer = new byte[1024];
+                                        int bytesRead;
+                                        while ((bytesRead = input.read(buffer)) != -1) {
+                                            outStream.write(buffer, 0, bytesRead);
+                                        }
+                                        input.close();
+
+                                    } catch (Exception e) {
+                                        outStream.writeObject("not waiting");
+                                    }
                                 } else {
-                                    if (nodata) {
+                                    outStream.writeObject("not waiting");
+                                }
+
+                                if (!existeID) {
+                                    outStream.writeObject("NOID");
+                                } else {
+                                    if (imgName.equals("")) {
                                         outStream.writeObject("NODATA");
                                     } else {
                                         outStream.writeObject("OK");
                                     }
                                 }
+
                             }
-                        }
-                        
-                        
+                            break;
 
-                    }
-                
+                        case "MYDOMAINS":
+                        case "MYDOMAIN":
+                            ArrayList<String> dms = devicesDm(dev_id);
+                            outStream.writeObject(dms);
+                            break;
 
-
-
-
-                    if (comandoSplit[0].equals("RI")){
-                        if (comandoSplit.length < 2) {
-                            erro = true;
-                            outStream.writeObject("not waiting");
-                            outStream.writeObject("falta de parametros");
-                        }else{
-                            boolean existeID = false;
-                            boolean perm = false;
-                            String[] userDev = comandoSplit[1].split(":");
-                            String imgName = "";
-                            for (User user : users) {
-                                if (user.getUserId().equals(userDev[0]) && user.getDeviceId() == Integer.parseInt(userDev[1])){
-                                    existeID = true;
-                                    imgName = user.getImgName();
-                                }
-                            }
-
-                            if (existeID && !imgName.equals("")) {
-                                try {
-                                    File img = new File("./ser/" + imgName);
-                                    outStream.writeObject("waiting");
-                                    outStream.writeObject(imgName);
-                                    long fileSize = img.length();
-                                    FileInputStream fin = new FileInputStream(img);
-                                    InputStream input = new BufferedInputStream(fin);
-                                    outStream.writeObject((long) fileSize);
-                                    byte[] buffer = new byte[1024];
-                                    int bytesRead;
-                                    while ((bytesRead = input.read(buffer)) != -1) {
-                                        outStream.write(buffer, 0, bytesRead);
-                                    }
-                                    input.close();
-
-                                } catch (Exception e) {
-                                    outStream.writeObject("not waiting");
-                                }
-                                
-                                
-                                
-                            }else{
-                                outStream.writeObject("not waiting");
-                            }
-                            
-                            if (!existeID) {
-                                outStream.writeObject("NOID");
-                            } else {
-                                if (imgName.equals("")) {
-                                    outStream.writeObject("NODATA");
-                                } else {
-                                    outStream.writeObject("OK");
-                                }
-                            }
-
-                        }
-                        
-                        
-                    }
-
-
-
-                    if (comandoSplit[0].equals("MYDOMAINS")) {
-                        ArrayList<String> dms = devicesDm(dev_id);
-                        outStream.writeObject(dms);    
-                    }
-
-
-
-
-                    if (comandoSplit[0].equals("exit") || comandoSplit[0].equals("e")) {
-                        loop = false;
-						System.out.println("User " + user_id + " desconectado");
-						outStream.writeObject("Foi desconectado com sucesso");                        
+                        case "exit":
+                        case "e":
+                            loop = false;
+                            System.out.println("User " + user_id + " desconectado");
+                            outStream.writeObject("Foi desconectado com sucesso");
+                            break;
                     }
                 }
 
