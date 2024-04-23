@@ -1,8 +1,1 @@
-goncaz:1234
-galamba:naoministro
-josesocrates:meuamigo
-votarnoadn:pqmeenganei
-Fernando:1234
-votaradn:1234
-luis@dada:1234
-fernando:1234
+fc54413@alunos.ciencias.ulisboa.pt:1234

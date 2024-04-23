@@ -35,7 +35,7 @@ public class IoTDevice {
     // Método para assinar os dados com a chave privada
     private static byte[] signData(PrivateKey privateKey, long data) {
         try {
-            Signature signature = Signature.getInstance("PBEWithHmacSHA256AndAES_128");
+            Signature signature = Signature.getInstance("SHA256withRSA ");
             signature.initSign(privateKey);
             signature.update(ByteBuffer.allocate(Long.BYTES).putLong(data).array());
             return signature.sign();
@@ -107,6 +107,18 @@ public class IoTDevice {
             outStream.writeObject(signature);
             outStream.flush();
  
+
+            System.out.print("Introduza o código enviado pelo servidor: ");
+            String userInputC2FA = sc.nextLine();
+            outStream.writeObject(userInputC2FA);
+
+            String apiResult = (String) inStream.readObject();
+            System.out.println(apiResult);
+
+            if (apiResult.equals("Autenticação falhada. O código introduzido é inválido.")) {
+                return;
+            }
+
             System.out.println();   
             try {
                 Auth aut = (Auth) inStream.readObject();

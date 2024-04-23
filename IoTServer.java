@@ -13,8 +13,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.Scanner;
 
@@ -32,6 +34,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,6 +45,7 @@ import java.util.List;
 public class IoTServer {
 
     private List<User> users = new ArrayList<>();
+    private static String apiKey;
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
     private static final String ALGORITHM2 = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
@@ -59,7 +63,7 @@ public class IoTServer {
     private static final int KEY_LENGTH = 128;
 
     private static final String ALGORITHM = "PBEWithHmacSHA256AndAES_128";
-                                            
+                                
     private static final int NONCE_LENGTH = 8;
 
     // Gerar nonce aleatório de 8 bytes
@@ -78,6 +82,30 @@ public class IoTServer {
             result |= (bytes[i] & 0xFF);
         }
         return result;
+    }
+
+    private static final String TWO_FACTOR_AUTH_API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
+
+    // Método para gerar um código C2FA aleatório de cinco dígitos
+    private static String generateC2FA() {
+        Random random = new Random();
+        int c2fa = random.nextInt(100000); // Gera um número aleatório entre 0 e 99999
+        return String.format("%05d", c2fa); // Formata o número como uma string de cinco dígitos com zeros à esquerda, se necessário
+    }
+
+    // Método para enviar o código C2FA por e-mail ao utilizador
+    private static void sendC2FAByEmail(String userEmail, String c2fa, String apiK) throws IOException {
+        String urlString = TWO_FACTOR_AUTH_API_URL + "?e=" + userEmail + "&c=" + c2fa + "&a=" + apiK;
+        URL url = new URL(urlString);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setRequestMethod("GET");
+
+        int responseCode = connection.getResponseCode();
+        if (responseCode == HttpURLConnection.HTTP_OK) {
+            System.out.println("C2FA enviado por e-mail com sucesso para " + userEmail);
+        } else {
+            System.out.println("Falha ao enviar o C2FA por e-mail para " + userEmail);
+        }
     }
 
 
@@ -181,19 +209,18 @@ public class IoTServer {
         String pwdCifra;
         String keystore;
         String pwdKeyS;
-        String apiK;
         if (args.length==4) {
             port = 12345;
             pwdCifra = args[0];
             keystore = args[1];
             pwdKeyS = args[2];
-            apiK = args[3];        
+            apiKey = args[3];        
         } else {
             port = Integer.parseInt(args[0]);
             pwdCifra = args[1];
             keystore = args[2];
             pwdKeyS = args[3];
-            apiK = args[4];
+            apiKey = args[4];
         }
 
         try {
@@ -289,6 +316,18 @@ public class IoTServer {
                 // 2) Receber resposta do cliente (assinatura do nonce)
                 byte[] signature = (byte[]) inStream.readObject();
                  
+                String c2fa = generateC2FA();
+                sendC2FAByEmail(user_id, c2fa, apiKey);
+                String userInputC2FA = (String) inStream.readObject();
+
+                if (userInputC2FA.equals(c2fa)) {
+                    outStream.writeObject("Autenticação bem-sucedida!");
+                    System.out.println("Autenticação bem-sucedida!");
+                } else {
+                    outStream.writeObject("Autenticação falhada. O código introduzido é inválido.");
+                    System.out.println("Autenticação falhada. O código introduzido é inválido.");
+                    return;
+                }
 
 				// ler e escrever no ficheiro users
                 Auth autenticado = authenticateUser(user_id,passwd);
