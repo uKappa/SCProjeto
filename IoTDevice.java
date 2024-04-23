@@ -46,7 +46,22 @@ public class IoTDevice {
     }
 
 
-    public static void main(String[] args) throws IOException {
+    private static final int BUFFER_SIZE = 4096;
+    private static byte[] calculateHash(File file, byte[] nonce) throws NoSuchAlgorithmException, IOException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[BUFFER_SIZE];
+            int bytesRead;
+            while ((bytesRead = fis.read(buffer)) != -1) {
+                digest.update(buffer, 0, bytesRead);
+            }
+            digest.update(nonce);
+        }
+        return digest.digest();
+    }
+
+
+    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
         SSLSocket socket = null;
 
         String serverAddress = args[0];
@@ -133,11 +148,20 @@ public class IoTDevice {
                 e.printStackTrace();
             }
             outStream.writeObject(dev_id);
-            System.out.println("Insira nome e tamnaho do ficheiro executável IoTDevice <nome> <tamanho>: ");
-            String nomeTamanho = sc.nextLine();
-            // TODO erro no formato
-            outStream.writeObject(nomeTamanho);
 
+            long nonce2 = (long) inStream.readObject();
+            File device = new File("IoTDevice.java");
+            ByteBuffer bffr = ByteBuffer.allocate(Long.BYTES);
+            bffr.putLong(nonce2);
+            byte[] hash = calculateHash(device, bffr.array());
+            outStream.writeObject(hash);
+
+            String tested = (String) inStream.readObject();
+            System.out.println(tested);
+            if (tested.equals("NOKTESTED")) {
+                return;
+            }
+            
             String command = "";
 
             if ((boolean)inStream.readObject()) {

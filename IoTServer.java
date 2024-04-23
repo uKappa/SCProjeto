@@ -27,6 +27,8 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import javax.net.ServerSocketFactory;
@@ -106,6 +108,11 @@ public class IoTServer {
         } else {
             System.out.println("Falha ao enviar o C2FA por e-mail para " + userEmail);
         }
+    }
+
+    private static byte[] calculateHash(byte[] data) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        return digest.digest(data);
     }
 
 
@@ -341,10 +348,21 @@ public class IoTServer {
                     System.out.println(autenticado);
                 }
                 int dev_id = (int)inStream.readObject();
-                String nomeTamanho = (String)inStream.readObject();
-                String[] nomeTamanhoSpt = nomeTamanho.split(" ");
-                // TODO RESPOSTA
 
+                long nonce2 = generateNonce();
+                outStream.writeObject(nonce2);
+                outStream.flush();
+                byte[] hash = (byte[]) inStream.readObject();
+                byte[] calchash = calculateHash(hash);
+
+                String tested;
+                if (!hash.equals(calchash)) {
+                    tested = "NOKTESTED";
+                    outStream.writeObject(tested);
+                    return;
+                }
+                tested = "OKTESTED";
+                outStream.writeObject(tested);
 
                 outStream.writeObject(addUserOrUpdateConnection(user_id,dev_id));           
                 
@@ -831,7 +849,10 @@ public class IoTServer {
 
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
-			} 
+			} catch (NoSuchAlgorithmException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } 
 		}
 	}
 
