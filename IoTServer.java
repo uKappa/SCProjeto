@@ -882,6 +882,11 @@ public class IoTServer {
 
 
 
+                    if (comandoSplit[0].equals("MYDOMAINS")) {
+                        ArrayList<String> dms = devicesDm(dev_id);
+                        outStream.writeObject(dms);    
+                    }
+
 
 
 
@@ -904,6 +909,30 @@ public class IoTServer {
                 e1.printStackTrace();
             } 
 		}
+
+        private ArrayList<String> devicesDm(int dev_id) { 
+            ArrayList<String> dms = new ArrayList<String>();
+            try {
+                File dominios = new File("dominios.txt");
+                Scanner sc1 = new Scanner(dominios);
+                    
+                while (sc1.hasNextLine()) {
+                    String line = sc1.nextLine();
+                    String[] dSplit = line.split("-");
+                    String[] devicesAdded = dSplit[3].split(":");
+                    for (String dev : devicesAdded) {
+                        if (dev.equals(Integer.toString(dev_id))) {
+                            dms.add(dSplit[0]);
+                        }
+                    }
+                }
+                sc1.close();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+            
+            return dms;
+        }
 	}
 
 }

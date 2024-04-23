@@ -112,7 +112,7 @@ public class IoTDevice {
             outStream.writeObject(passwd);
             
             PrivateKey privateKey = getPrivateKeyFromKeyStore(keystore, pswKeyS);
-            
+
             long nonce = (long) inStream.readObject();
 
             
@@ -178,8 +178,8 @@ public class IoTDevice {
                 System.out.println("EI <filename.jpg> # Enviar Imagem <filename.jpg> para o servidor");
                 System.out.println("RT <dm> # Receber as últimas medições de Temperatura de cada dispositivo do domínio <dm>, desde que o utilizador tenha permissões");
                 System.out.println("RI <user-id>:<dev_id> # Receber o ficheiro Imagem do dispositivo <userid>:<dev_id> do servidor, desde que o utilizador tenha permissões");
+                System.out.println("MYDOMAINS – imprime a lista de domínios que o dispositivo pertence");
                 System.out.println("exit");
-
 
             }
 
