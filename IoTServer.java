@@ -841,6 +841,10 @@ public class IoTServer {
                             System.out.println("User " + user_id + " desconectado");
                             outStream.writeObject("Foi desconectado com sucesso");
                             break;
+
+                        default:
+                            outStream.writeObject("Comando desconhecido.");
+                            break;
                     }
                 }
 
