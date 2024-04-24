@@ -51,6 +51,9 @@ public class IoTServer {
     private List<User> users = new ArrayList<>();
     private static String apiKey;
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
+    private Map<String, String> dmPwd = new HashMap<>();
+    private Map<String, SecretKey> dmKey = new HashMap<>();
+
     private static final String ALGORITHM2 = "AES";
     private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
 
@@ -111,15 +114,6 @@ public class IoTServer {
             System.out.println("Falha ao enviar o C2FA por e-mail para " + userEmail);
         }
     }
-/* 
-    private byte[] calculateHash(byte[] nonce) throws NoSuchAlgorithmException, IOException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        File device = new File("IotDevice.java");
-        byte[] data = fileToByteArray(device);
-        digest.update(data);
-        digest.update(nonce);
-        return digest.digest();
-    } */
 
     private static byte[] fileToByteArray(File file) throws IOException {
         // Verifica se o arquivo existe
@@ -278,13 +272,11 @@ public class IoTServer {
 
         try {
 
-           SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+            SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
            
             KeySpec keySpec = new PBEKeySpec(pwdCifra.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
             SecretKey tmp = keyFactory.generateSecret(keySpec);
             SecretKey secretKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM);
-           
-            // ^ a chave pode ser usada para encriptar ou desencriptar
            
             Cipher cipher = Cipher.getInstance(ALGORITHM);
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -370,6 +362,7 @@ public class IoTServer {
                 byte[] signature = (byte[]) inStream.readObject();
                  
                 String c2fa = generateC2FA();
+                System.out.println(c2fa);
                 sendC2FAByEmail(user_id, c2fa, apiKey);
                 String userInputC2FA = (String) inStream.readObject();
 
@@ -406,7 +399,7 @@ public class IoTServer {
                 
 
                 String tested;
-                if (hash.equals(calchash)) {
+                if (!Arrays.equals(hash, calchash)) {
                     tested = "NOKTESTED";
                     outStream.writeObject(tested);
                     return;
@@ -416,7 +409,7 @@ public class IoTServer {
 
                 outStream.writeObject(addUserOrUpdateConnection(user_id,dev_id));           
                 
-                
+
                 if (!deviceTemperatures.containsKey(dev_id)) {
                     deviceTemperatures.put(dev_id, null);
                 } else {
@@ -470,6 +463,9 @@ public class IoTServer {
                                     outStream.writeObject("NOK");
                                 } else {
                                     dContent = dContent.concat(comandoSplit[1] + "-" + user_id + "-:-:\n");
+                                    outStream.writeObject("waiting");
+                                    SecretKey key = dmPwdGenerate(comandoSplit[1], (String) inStream.readObject());
+                                    outStream.writeObject(key);
                                     outStream.writeObject("OK");
                                 }
                                 wr.write(dContent);
@@ -478,7 +474,7 @@ public class IoTServer {
                             break;
 
                         case "ADD":
-                            if (comandoSplit.length < 3) {
+                            if (comandoSplit.length < 4) {
                                 erro = true;
                                 outStream.writeObject("falta de parametros");
                             } else {
@@ -495,7 +491,7 @@ public class IoTServer {
                                         dContent = dContent.concat(dSplit[0] + "-" + dSplit[1] + "-" + dSplit[2]);
                                         if (dSplit[0].equals(comandoSplit[2])) {
                                             existeD = true;
-                                            if (dSplit[1].equals(user_id)) {
+                                            if (dSplit[1].equals(user_id) && comandoSplit[3].equals(dmPwd.get(dSplit[0]))) {
                                                 perm = true;
                                                 BufferedReader reader = new BufferedReader(new FileReader("users.txt"));
                                                 String line2;
@@ -830,7 +826,6 @@ public class IoTServer {
                             break;
 
                         case "MYDOMAINS":
-                        case "MYDOMAIN":
                             ArrayList<String> dms = devicesDm(dev_id);
                             outStream.writeObject(dms);
                             break;
@@ -860,6 +855,21 @@ public class IoTServer {
                 e1.printStackTrace();
             } 
 		}
+
+        private SecretKey dmPwdGenerate(String dm, String pwd) {
+            try {
+                SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+                KeySpec keySpec = new PBEKeySpec(pwd.toCharArray(), SALT, ITERATIONS, KEY_LENGTH);
+                SecretKey tmp = keyFactory.generateSecret(keySpec);
+                SecretKey domainKey = new SecretKeySpec(tmp.getEncoded(), ALGORITHM2);
+                dmPwd.put(dm, pwd);
+                dmKey.put(dm, domainKey);
+                return domainKey;
+            } catch (Exception e) {
+                
+            }
+            return null;
+        }
 
         private ArrayList<String> devicesDm(int dev_id) { 
             ArrayList<String> dms = new ArrayList<String>();

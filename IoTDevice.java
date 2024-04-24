@@ -11,14 +11,21 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import java.nio.ByteBuffer;
 import java.security.*;
+
+import javax.crypto.SecretKey;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 public class IoTDevice {
+
+    private static Map<String, SecretKey> dmKey = new HashMap<>();
+    
 
     // Método para obter a chave privada do keystore
     private static PrivateKey getPrivateKeyFromKeyStore(String keystore, String password) {
@@ -189,6 +196,17 @@ public class IoTDevice {
                 command = sc.nextLine();
                 outStream.writeObject(command);
                 String[] cmdSpt = command.split(" ");
+
+
+
+                if (cmdSpt[0].equals("CREATE")) {
+                    if (inStream.readObject().equals("waiting")) {
+                        System.out.println("Insira uma password para o dominio: ");
+                        outStream.writeObject(sc.nextLine());
+                        SecretKey key = (SecretKey) inStream.readObject();
+                        dmKey.put(cmdSpt[0],key);
+                    }         
+                }
 
 
 
