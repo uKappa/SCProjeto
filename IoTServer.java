@@ -284,7 +284,7 @@ public class IoTServer {
 
             byte[] keyBytes = secretKey.getEncoded();
            
-            System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
+            //System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
            
             } catch (Exception e) {
            
@@ -388,6 +388,12 @@ public class IoTServer {
                 }
                 int dev_id = (int)inStream.readObject();
 
+                if (addUserOrUpdateConnection(user_id,dev_id)) {
+                    outStream.writeObject("NOK-DEVID");  
+                    return;
+                }
+                outStream.writeObject("OK-DEVID");  
+
                 long nonce2 = generateNonce();
                 outStream.writeObject(nonce2);
                 outStream.flush();
@@ -407,7 +413,6 @@ public class IoTServer {
                 tested = "OKTESTED";
                 outStream.writeObject(tested);
 
-                outStream.writeObject(addUserOrUpdateConnection(user_id,dev_id));           
                 
 
                 if (!deviceTemperatures.containsKey(dev_id)) {
