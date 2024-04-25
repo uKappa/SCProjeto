@@ -6,6 +6,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -23,12 +24,14 @@ import java.text.ParseException;
 import java.util.Scanner;
 
 import javax.crypto.Cipher;
+import javax.crypto.CipherOutputStream;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.SecretKeySpec;
 import javax.crypto.spec.PBEKeySpec;
 
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -41,6 +44,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -140,69 +144,84 @@ public class IoTServer {
         return baos.toByteArray();
     }
 
+    private static final byte[] USERS_SALT = {30, -75, 65, 12, 46, 98, 76, 111, -7, 11, -31, 72, 92, -87, 1, 69};
 
-	public static Auth authenticateUser(String username, String password) {
-        String fileName = "users.txt";
-        Map<String, String> users = new HashMap<>();
+
+	public static Auth authenticateUser(String username, String password) throws GeneralSecurityException, IOException {
+        String fileName = "users.cif";
+
+        File file = new File(fileName);
+        if (!file.exists())
+            file.createNewFile();
         //System.out.println("entrei na função authenticateUser. server 21");
 
         try {
-            // Read the existing user data from the text file
+            Map<String, String> users = new HashMap<>();
             BufferedReader reader = new BufferedReader(new FileReader(fileName));
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(":");
                 if (parts.length == 2) {
-                    users.put(parts[0], parts[1]);
+                    users.put(decrypt(parts[0]), decrypt(parts[1]));
                 }
             }
             reader.close();
 
-            // Check if the username exists
             if (users.containsKey(username)) {
                 String storedPassword = users.get(username);
-                // Check if the password matches
                 if (storedPassword.equals(password)) {
-                    return Auth.OK_USER; // Authentication successful
+                    return Auth.OK_USER; 
                 } else {
-                    return Auth.PASSWORD_NO_MATCH; // Password doesn't match
+                    return Auth.PASSWORD_NO_MATCH; 
                 }
             } else {
-                // Add the new user to the text file
                 FileWriter writer = new FileWriter(fileName, true);
-                writer.write(username + ":" + password + "\n");
+                writer.write(encrypt(username) + ":" + encrypt(password) + "\n");
                 writer.close();
-                return Auth.NEW_USER; // New user added successfully
+                return Auth.NEW_USER; 
             }
         } catch (IOException e) {
             e.printStackTrace();
-            return Auth.ERROR; // Error occurred
+            return Auth.ERROR; 
         }
     }
 
-    // Method to change image name for a specific user with given user ID and device ID
+    private static String encrypt(String text) throws GeneralSecurityException, FileNotFoundException {
+        SecretKey secretKey = new SecretKeySpec(USERS_SALT,ALGORITHM2);
+        Cipher cipher = Cipher.getInstance(ALGORITHM2);
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        byte[] encryptedBytes = cipher.doFinal(text.getBytes());
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    private static String decrypt(String encryptedtext) throws GeneralSecurityException {
+        SecretKey secretKey = new SecretKeySpec(USERS_SALT, ALGORITHM2);
+        Cipher cipher = Cipher.getInstance(ALGORITHM2);
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedtext.replaceAll("\\s", "")));
+        return new String(decryptedBytes);
+    }
+
     public void changeUserImageName(String userId, int deviceId, String newImgName) {
         for (User user : users) {
             if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
                 user.setImgName(newImgName);
                 System.out.println("Image name updated for user " + userId + " with device ID " + deviceId);
-                return; // Exit loop once user is found and image name is updated
+                return;
             }
         }
-        // If user with given ID and device ID pair is not found
         System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
     }
 
-    // Method to disconnect a specific user with given user ID and device ID
+   
     public void disconnectUser(String userId, int deviceId) {
         for (User user : users) {
             if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
-                user.setConectado(false); // Setting connected attribute to false
+                user.setConectado(false); 
                 System.out.println("User " + userId + " with device ID " + deviceId + " disconnected");
-                return; // Exit loop once user is found and disconnected
+                return; 
             }
         }
-        // If user with given ID and device ID pair is not found
         System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
     }
 
@@ -283,8 +302,6 @@ public class IoTServer {
             
 
             byte[] keyBytes = secretKey.getEncoded();
-           
-            //System.out.println("Generated SecretKey (Base64): " + java.util.Base64.getEncoder().encodeToString(keyBytes));
            
             } catch (Exception e) {
            
@@ -407,6 +424,7 @@ public class IoTServer {
                 String tested;
                 if (!Arrays.equals(hash, calchash)) {
                     tested = "NOKTESTED";
+                    disconnectUser(user_id,dev_id);
                     outStream.writeObject(tested);
                     return;
                 }
@@ -838,7 +856,7 @@ public class IoTServer {
                         case "exit":
                         case "e":
                             loop = false;
-                            System.out.println("User " + user_id + " desconectado");
+                            disconnectUser(user_id,dev_id);
                             outStream.writeObject("Foi desconectado com sucesso");
                             break;
 
@@ -858,6 +876,9 @@ public class IoTServer {
 			} catch (NoSuchAlgorithmException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
+            } catch (GeneralSecurityException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             } 
 		}
 
