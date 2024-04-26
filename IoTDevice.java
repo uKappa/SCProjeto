@@ -96,7 +96,7 @@ public class IoTDevice {
 
         System.setProperty("javax.net.ssl.trustStore", trustStore);
         System.setProperty("javax.net.ssl.trustStorePassword", "cliente");
-            
+        
         SocketFactory sf = SSLSocketFactory.getDefault( );
 
         try {

@@ -54,6 +54,7 @@ public class IoTServer {
 
     private List<User> users = new ArrayList<>();
     private static String apiKey;
+    private static String keystore;
     private Map<Integer, Float> deviceTemperatures = new HashMap<>();
     private Map<String, String> dmPwd = new HashMap<>();
     private Map<String, SecretKey> dmKey = new HashMap<>();
@@ -256,7 +257,7 @@ public class IoTServer {
 		IoTServer server = new IoTServer();
         int port;
         String pwdCifra;
-        String keystore;
+        
         String pwdKeyS;
         if (args.length==4) {
             port = 12345;
@@ -305,7 +306,7 @@ public class IoTServer {
 		ServerSocket sSoc = null;
 
 
-        System.setProperty("javax.net.ssl.keyStore", "keystore.server");
+        System.setProperty("javax.net.ssl.keyStore", keystore);
         System.setProperty("javax.net.ssl.keyStorePassword", pwdKeyS);
         System.setProperty("javax.net.ssl.keyStoreAlias", "servidor");
         ServerSocketFactory ssf = SSLServerSocketFactory.getDefault( );
