@@ -59,7 +59,6 @@ public class IoTServer {
     private Map<String, SecretKey> dmKey = new HashMap<>();
 
     private static final String ALGORITHM2 = "AES";
-    private static final String TRANSFORMATION = "AES/ECB/PKCS5Padding";
 
     private static final int ITERATIONS = 10000;
 
@@ -77,7 +76,9 @@ public class IoTServer {
                                 
     private static final int NONCE_LENGTH = 8;
 
-    // Gerar nonce aleatório de 8 bytes
+    private static final byte[] USERS_SALT = {30, -75, 65, 12, 46, 98, 76, 111, -7, 11, -31, 72, 92, -87, 1, 69};
+
+
     private long generateNonce() {
         SecureRandom random = new SecureRandom();
         byte[] nonceBytes = new byte[NONCE_LENGTH];
@@ -85,7 +86,6 @@ public class IoTServer {
         return bytesToLong(nonceBytes);
     }
 
-    // Converter bytes para long
     private long bytesToLong(byte[] bytes) {
         long result = 0;
         for (int i = 0; i < bytes.length; i++) {
@@ -97,14 +97,12 @@ public class IoTServer {
 
     private static final String TWO_FACTOR_AUTH_API_URL = "https://lmpinto.eu.pythonanywhere.com/2FA";
 
-    // Método para gerar um código C2FA aleatório de cinco dígitos
     private static String generateC2FA() {
         Random random = new Random();
-        int c2fa = random.nextInt(100000); // Gera um número aleatório entre 0 e 99999
-        return String.format("%05d", c2fa); // Formata o número como uma string de cinco dígitos com zeros à esquerda, se necessário
+        int c2fa = random.nextInt(100000);
+        return String.format("%05d", c2fa);
     }
 
-    // Método para enviar o código C2FA por e-mail ao utilizador
     private static void sendC2FAByEmail(String userEmail, String c2fa, String apiK) throws IOException {
         String urlString = TWO_FACTOR_AUTH_API_URL + "?e=" + userEmail + "&c=" + c2fa + "&a=" + apiK;
         URL url = new URL(urlString);
@@ -120,32 +118,24 @@ public class IoTServer {
     }
 
     private static byte[] fileToByteArray(File file) throws IOException {
-        // Verifica se o arquivo existe
         if (!file.exists() || !file.isFile()) {
             throw new IllegalArgumentException("Arquivo inválido: " + file.getPath());
         }
-    
-        // Cria um fluxo de entrada para ler os bytes do arquivo
+
         FileInputStream fis = new FileInputStream(file);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
     
-        // Lê os bytes do arquivo e escreve-os no ByteArrayOutputStream
         byte[] buffer = new byte[1024];
         int bytesRead;
         while ((bytesRead = fis.read(buffer)) != -1) {
             baos.write(buffer, 0, bytesRead);
         }
     
-        // Fecha os fluxos de entrada
         fis.close();
         baos.close();
     
-        // Retorna o array de bytes resultante
         return baos.toByteArray();
     }
-
-    private static final byte[] USERS_SALT = {30, -75, 65, 12, 46, 98, 76, 111, -7, 11, -31, 72, 92, -87, 1, 69};
-
 
 	public static Auth authenticateUser(String username, String password) throws GeneralSecurityException, IOException {
         String fileName = "users.cif";
@@ -153,7 +143,6 @@ public class IoTServer {
         File file = new File(fileName);
         if (!file.exists())
             file.createNewFile();
-        //System.out.println("entrei na função authenticateUser. server 21");
 
         try {
             Map<String, String> users = new HashMap<>();
@@ -213,7 +202,6 @@ public class IoTServer {
         System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
     }
 
-   
     public void disconnectUser(String userId, int deviceId) {
         for (User user : users) {
             if (user.getUserId().equals(userId) && user.getDeviceId() == deviceId) {
@@ -224,7 +212,6 @@ public class IoTServer {
         }
         System.out.println("User with ID " + userId + " and device ID " + deviceId + " not found.");
     }
-
 
     public boolean addUserOrUpdateConnection(String userId, int deviceId) {
         boolean found = false;
@@ -249,7 +236,6 @@ public class IoTServer {
         return resp;
     }
 
-
     private static final int BUFFER_SIZE = 4096;
     private static byte[] calculateHash(File file, byte[] nonce) throws NoSuchAlgorithmException, IOException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -263,10 +249,7 @@ public class IoTServer {
         }
         return digest.digest();
     }
-    
 
-	
-    
     public static void main(String[] args) throws IOException {
         
         System.out.println("servidor: main");
@@ -370,12 +353,10 @@ public class IoTServer {
                     
 				}
                 
-    
-                // 1) Enviar nonce aleatório ao cliente
+
                 long nonce = generateNonce();
                 outStream.writeObject(nonce);
                 outStream.flush();
-                // 2) Receber resposta do cliente (assinatura do nonce)
                 byte[] signature = (byte[]) inStream.readObject();
                  
                 String c2fa = generateC2FA();
@@ -396,7 +377,6 @@ public class IoTServer {
                 Auth autenticado = authenticateUser(user_id,passwd);
 
 				outStream.writeObject(autenticado);
-				//outStream.writeBoolean(autenticado);
 				System.out.println(autenticado);
                 while (autenticado == Auth.PASSWORD_NO_MATCH) {
                     passwd = (String)inStream.readObject();
@@ -448,16 +428,11 @@ public class IoTServer {
 					System.out.println(comando);
                     String[] comandoSplit = comando.split(" ");
 
-                    // TODO PROCESSAR COMANDOS AQUI
-
                     File dominios;
 					FileWriter wr;
 					String dContent = "";
 					Scanner sc1;
 					boolean erro = false;
-
-
-
 
                     switch (comandoSplit[0]) {
                         case "CREATE":
@@ -516,11 +491,11 @@ public class IoTServer {
                                             existeD = true;
                                             if (dSplit[1].equals(user_id) && comandoSplit[3].equals(dmPwd.get(dSplit[0]))) {
                                                 perm = true;
-                                                BufferedReader reader = new BufferedReader(new FileReader("users.txt"));
+                                                BufferedReader reader = new BufferedReader(new FileReader("users.cif"));
                                                 String line2;
                                                 while ((line2 = reader.readLine()) != null && !existeU) {
                                                     String[] parts = line2.split(":");
-                                                    if (parts[0].equals(comandoSplit[1])) {
+                                                    if (decrypt(parts[0]).equals(comandoSplit[1])) {
                                                         existeU = true;
                                                         String[] usersAdded = dSplit[2].split(":");
                                                         if (Arrays.stream(usersAdded).anyMatch(comandoSplit[1]::equals) || dSplit[1].equals(comandoSplit[1])) {
@@ -874,10 +849,8 @@ public class IoTServer {
 			} catch (IOException | ClassNotFoundException e) {
 				e.printStackTrace();
 			} catch (NoSuchAlgorithmException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             } catch (GeneralSecurityException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             } 
 		}
@@ -915,7 +888,7 @@ public class IoTServer {
                 }
                 sc1.close();
             } catch (Exception e) {
-                // TODO: handle exception
+                e.printStackTrace();
             }
             
             return dms;
